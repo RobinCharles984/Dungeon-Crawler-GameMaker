@@ -1,0 +1,114 @@
+# =======================================================================
+# GameMaker Studio / GameMaker .gitignore
+# =======================================================================
+
+# --- GameMaker Temporary, Cache & Backup Files ---
+*.resource_order
+*.old
+*.backup
+*.bak
+*.tmp
+*.temp
+*autosave.yy
+.yydebug
+cache/
+.cache/
+datafiles/deployed_cache/
+scripts/backup/
+options/main/inherited/
+options/operagx/inherited/
+
+# Third-party GameMaker tool helpers
+___yyp_maker_trash/
+*GMLive*
+stitch.config.json
+
+# --- GameMaker Builds & Package Exports ---
+[Bb]uild/
+[Bb]uilds/
+Export/
+*.yyz
+*.exe
+*.apk
+*.aab
+*.pkg
+*.dmg
+*.app/
+*.ipa
+*.zip
+*.tar.gz
+*.7z
+
+# --- Logs & Crash Dumps ---
+*.log
+compile.log
+igor.log
+ui.log
+*.dmp
+*.dump
+*.stackdump
+
+# =======================================================================
+# IDEs and Code Editors
+# =======================================================================
+# JetBrains (IntelliJ, Rider, WebStorm, etc.)
+.idea/
+*.iml
+*.iws
+
+# Visual Studio Code
+.vscode/
+
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userprefs
+*.sln.docstates
+
+# Generic editor backups
+*~
+*.swp
+*.swo
+
+# =======================================================================
+# Operating System Files
+# =======================================================================
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Linux
+.fuse_hidden*
+.directory
+.Trash-*
