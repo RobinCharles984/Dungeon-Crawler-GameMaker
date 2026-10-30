@@ -20,6 +20,10 @@ function d3d_set_projection(xfrom, yfrom, zfrom, xto, yto, zto, xup, yup, zup) {
     camera_apply(view_camera[0]);
 }
 
+function d3d_set_fog(enable, color = c_black, start_dist = 1, end_dist = 300) {
+    gpu_set_fog(enable, color, start_dist, end_dist);
+}
+
 function d3d_draw_wall(x1, y1, z1, x2, y2, z2, tex, hrepeat = 1, vrepeat = 1) {
     var _vb = vertex_create_buffer();
     vertex_begin(_vb, global.d3d_format);

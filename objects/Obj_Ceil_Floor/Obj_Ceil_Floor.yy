@@ -9,8 +9,8 @@
   "managed": true,
   "overriddenProperties": [],
   "parent": {
-    "name": "Objetos",
-    "path": "folders/Objetos.yy",
+    "name": "Sections",
+    "path": "folders/Objetos/Scene/Sections.yy",
   },
   "parentObjectId": null,
   "persistent": false,
