@@ -46,9 +46,9 @@ biome_grid[# _cx, _cy] = _current_biome;
 
 var _odds = 1;
 
-repeat(400) {
-    // A cada ~120 passos, tem chance de mudar para outro bioma da run
-    if (irandom(120) == 0) {
+repeat(5000) {
+    // A cada ~60 passos, tem chance de mudar para outro bioma da run
+    if (irandom(500) == 0) {
         _current_biome = _run_biomes[irandom(array_length(_run_biomes) - 1)];
     }
 
