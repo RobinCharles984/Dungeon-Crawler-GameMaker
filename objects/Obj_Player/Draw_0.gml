@@ -1,3 +1,5 @@
+var _ztilt = lengthdir_y(1, target_dir);
+
 // Draw the projection
 dir = lerp(dir, target_dir, .1);
 x = lerp(x, target_x, .1);

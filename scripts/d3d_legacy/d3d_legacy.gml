@@ -10,6 +10,8 @@ function d3d_start() {
     vertex_format_add_texcoord();
     vertex_format_add_colour();
     global.d3d_format = vertex_format_end();
+	
+	layer_force_draw_depth(true, 0);
 }
 
 function d3d_set_projection(xfrom, yfrom, zfrom, xto, yto, zto, xup, yup, zup) {
@@ -102,4 +104,20 @@ function d3d_draw_block(x1, y1, z1, x2, y2, z2, tex, hrepeats = 1, vrepeats = 1)
     vertex_end(_vb);
     vertex_submit(_vb, pr_trianglelist, tex);
     vertex_delete_buffer(_vb);
+}
+
+function d3d_billboard()
+{
+	// Todo cálculo necessário para billboard
+	if (!instance_exists(Obj_Player)) exit;
+
+	var _dir = point_direction(x, y, Obj_Player.x, Obj_Player.y) + 90;
+
+	var _matrix = matrix_build(x, y, 0, 90, 0, _dir, 1, 1, 1);
+
+	matrix_set(matrix_world, _matrix);
+
+	draw_sprite_ext(sprite_index, image_index, 0, 0, image_xscale, image_yscale, image_angle, image_blend, image_alpha);
+
+	matrix_set(matrix_world, matrix_build_identity());
 }
