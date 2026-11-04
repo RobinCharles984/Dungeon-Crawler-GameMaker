@@ -5,3 +5,5 @@ dir = 0;
 target_dir = 0;
 agro = 75;
 mspeed = 0.5;
+
+init_enemies();
