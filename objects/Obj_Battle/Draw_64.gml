@@ -10,6 +10,6 @@ var _x = (_width - _sprite_w) / 2;
 // O Y correto faz a base do sprite encostar no fundo da tela
 var _y = _height - _sprite_h;
 
-draw_sprite_stretched(battleBackground, 0, _x, _y, _sprite_w, _sprite_h);
+draw_sprite_stretched(battleBackground, 0, 0, _y, _width, _sprite_h);
 depth = -10000
 d3d_set_fog(false, c_black, 1, 10)
