@@ -1,6 +1,7 @@
 // Initialize the player
 z = 24;
 dir = 0;
+depth = 0
 
 // Create target variables for movement
 target_dir = dir;
