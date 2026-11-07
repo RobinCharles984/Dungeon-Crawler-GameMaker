@@ -1,3 +1,9 @@
+// Fallback: permite testar a Room_3D direto sem passar pela seleção de classe
+if (!variable_global_exists("player")) {
+    global.player = create_player(CLASS.AGRESSIVO, "Teste");
+}
+stats = global.player;   // ex.: stats.life, stats.attack, stats.skills[0].name
+
 // Initialize the player
 z = 24;
 dir = 0;
