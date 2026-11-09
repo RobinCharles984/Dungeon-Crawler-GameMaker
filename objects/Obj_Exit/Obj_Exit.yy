@@ -31,7 +31,10 @@
   "resourceType":"GMObject",
   "resourceVersion":"2.0",
   "solid":false,
-  "spriteId":null,
+  "spriteId":{
+    "name":"Spr_Exit",
+    "path":"sprites/Spr_Exit/Spr_Exit.yy",
+  },
   "spriteMaskId":null,
   "visible":true,
 }

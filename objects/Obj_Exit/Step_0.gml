@@ -13,6 +13,6 @@ if (instance_exists(Obj_Player) && instance_exists(Obj_Builder)) {
     if (_px == _ex && _py == _ey) {
         // Limpa instâncias pendentes e volta ao menu principal
         if (instance_exists(Obj_Battle)) instance_destroy(Obj_Battle);
-        room_goto(rm_main_menu);
+        room_goto(Room_MainMenu);
     }
 }

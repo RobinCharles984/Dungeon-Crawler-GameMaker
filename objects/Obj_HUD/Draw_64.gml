@@ -422,4 +422,13 @@ if (instance_exists(Obj_Builder) && ds_exists(Obj_Builder.grid, ds_type_grid)) {
 
         draw_rectangle_color(_pcx, _pcy, _pcx + _scale - 1, _pcy + _scale - 1, c_yellow, c_yellow, c_yellow, c_yellow, false);
     }
+	
+	if (instance_exists(Obj_Exit)) {
+        var _px  = Obj_Exit.x div Obj_Builder.cell_width;
+        var _py  = Obj_Exit.y div Obj_Builder.cell_height;
+        var _pcx = _off_x + (_px * _scale);
+        var _pcy = _off_y + (_py * _scale);
+
+        draw_rectangle_color(_pcx, _pcy, _pcx + _scale - 1, _pcy + _scale - 1, c_white, c_white, c_white, c_white, false);
+    }
 }

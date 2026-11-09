@@ -1,7 +1,7 @@
 function d3d_start() {
     gpu_set_ztestenable(true);
     gpu_set_zwriteenable(true);
-    gpu_set_cullmode(cull_counterclockwise);
+    gpu_set_cullmode(cull_noculling);
 	gpu_set_texrepeat(true);
 
     // Cria o formato 3D global necessário para o GMS2 desenhar as paredes

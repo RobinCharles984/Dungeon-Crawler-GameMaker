@@ -12,9 +12,12 @@ function move_player(){
     
 	    var vect_x = lengthdir_x(32, target_dir);
 	    var vect_y = lengthdir_y(32, target_dir);
+		
+	    var _target_gx = vect_x div Obj_Builder.cell_width;
+		var _target_gy = vect_y div Obj_Builder.cell_height;
     
 	    // Move Forward
-	    if (!place_meeting(target_x+vect_x, target_y+vect_y, Obj_Wall))
+	    if (Obj_Builder.grid[# _target_gx, _target_gy] != Obj_Builder.CELL_WALL)
 	    {
 	        target_x += vect_x;
 	        target_y += vect_y;
@@ -26,9 +29,12 @@ function move_player(){
     
 	    var vect_x = lengthdir_x(32, target_dir);
 	    var vect_y = lengthdir_y(32, target_dir);
+		
+		var _target_gx = vect_x div Obj_Builder.cell_width;
+		var _target_gy = vect_y div Obj_Builder.cell_height;
     
 	    // Move Forward
-	    if (!place_meeting(target_x-vect_x, target_y-vect_y, Obj_Wall))
+	    if (Obj_Builder.grid[# _target_gx, _target_gy] != Obj_Builder.CELL_WALL)
 	    {
 	        target_x -= vect_x;
 	        target_y -= vect_y;

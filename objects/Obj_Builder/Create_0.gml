@@ -114,14 +114,66 @@ for (var _yy = 0; _yy < _grid_h; _yy++) {
     }
 }
 
-// 5. INSTANCIAÇÃO DAS PAREDES 3D
+// 5. CONSTRUÇÃO DO VERTEX BUFFER DAS PAREDES (BATCHING 3D)
+// Formato de vértice 3D: Posição (X,Y,Z) + Normal + Cor + Textura (UV)
+format = undefined;
+if (format == undefined) {
+    vertex_format_begin();
+    vertex_format_add_position_3d();
+    vertex_format_add_color();
+    vertex_format_add_textcoord();
+    format = vertex_format_end();
+}
+
+// Cria um buffer para cada bioma
+wall_vbuf = [];
+wall_vbuf[BIOME.SEWER]   = vertex_create_buffer();
+wall_vbuf[BIOME.CAVE]    = vertex_create_buffer();
+wall_vbuf[BIOME.DUNGEON] = vertex_create_buffer();
+
+for (var b = 0; b < 3; b++) {
+    vertex_begin(wall_vbuf[b], format);
+}
+
+// Helper interno para adicionar uma face 3D (Quad) ao buffer
+var _add_face = function(_vbuf, _x1,_y1,_z1, _x2,_y2,_z2, _x3,_y3,_z3, _x4,_y4,_z4) {
+    // Triângulo 1
+    vertex_position_3d(_vbuf, _x1, _y1, _z1); vertex_color(_vbuf, c_white, 1); vertex_texcoord(_vbuf, 0, 0);
+    vertex_position_3d(_vbuf, _x2, _y2, _z2); vertex_color(_vbuf, c_white, 1); vertex_texcoord(_vbuf, 1, 0);
+    vertex_position_3d(_vbuf, _x3, _y3, _z3); vertex_color(_vbuf, c_white, 1); vertex_texcoord(_vbuf, 1, 1);
+    // Triângulo 2
+    vertex_position_3d(_vbuf, _x1, _y1, _z1); vertex_color(_vbuf, c_white, 1); vertex_texcoord(_vbuf, 0, 0);
+    vertex_position_3d(_vbuf, _x3, _y3, _z3); vertex_color(_vbuf, c_white, 1); vertex_texcoord(_vbuf, 1, 1);
+    vertex_position_3d(_vbuf, _x4, _y4, _z4); vertex_color(_vbuf, c_white, 1); vertex_texcoord(_vbuf, 0, 1);
+};
+
+// Varia por todo o grid criando os cubos 3D das paredes
 for (var _yy = 0; _yy < _grid_h; _yy++) {
     for (var _xx = 0; _xx < _grid_w; _xx++) {
         if (grid[# _xx, _yy] == CELL_WALL) {
-            var _wall = instance_create_layer(_xx * cell_width, _yy * cell_height, "Instances", Obj_Wall);
-            _wall.biome_type = biome_grid[# _xx, _yy];
+            var _b = biome_grid[# _xx, _yy];
+            var _v = wall_vbuf[_b];
+
+            var _x1 = _xx * cell_width;
+            var _y1 = _yy * cell_height;
+            var _x2 = _x1 + cell_width;
+            var _y2 = _y1 + cell_height;
+            var _z1 = 0;
+            var _z2 = 64; // Altura da parede
+
+            // Frente, Trás, Esquerda, Direita e Topo do bloco
+            _add_face(_v, _x1, _y1, _z2,  _x2, _y1, _z2,  _x2, _y1, _z1,  _x1, _y1, _z1); // Face Norte
+            _add_face(_v, _x2, _y2, _z2,  _x1, _y2, _z2,  _x1, _y2, _z1,  _x2, _y2, _z1); // Face Sul
+            _add_face(_v, _x1, _y2, _z2,  _x1, _y1, _z2,  _x1, _y1, _z1,  _x1, _y2, _z1); // Face Oeste
+            _add_face(_v, _x2, _y1, _z2,  _x2, _y2, _z2,  _x2, _y2, _z1,  _x2, _y1, _z1); // Face Leste
         }
     }
+}
+
+// Finaliza a gravação dos buffers
+for (var b = 0; b < 3; b++) {
+    vertex_end(wall_vbuf[b]);
+    vertex_freeze(wall_vbuf[b]); // Envia direto para a memória VRAM da GPU para performance máxima
 }
 
 // 6. CHÃO/TETO E PLAYER
