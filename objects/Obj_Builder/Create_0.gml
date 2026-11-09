@@ -204,59 +204,63 @@ var _exit_real_y = _exit_gy * cell_height + (cell_height / 2);
 var _exit_inst   = instance_create_layer(_exit_real_x, _exit_real_y, "Instances", Obj_Exit);
 _exit_inst.depth = -10;
 
-// 8. SPAWN DE INIMIGOS ESCALADO E GARANTIDO
+// 8. SPAWN PROCEDURAL DIVERSIFICADO POR BIOMA
 if (!variable_global_exists("enemies")) init_enemies();
 
-var _biome_cells = [];
-_biome_cells[BIOME.SEWER]   = [];
-_biome_cells[BIOME.CAVE]    = [];
-_biome_cells[BIOME.DUNGEON] = [];
+var _gw = ds_grid_width(grid);
+var _gh = ds_grid_height(grid);
 
-for (var _yy = 0; _yy < _grid_h; _yy++) {
-    for (var _xx = 0; _xx < _grid_w; _xx++) {
+// 1. Coleta todos os chãos válidos longe do spawn do player e da saída
+var _valid_floor_cells = [];
+
+for (var _yy = 0; _yy < _gh; _yy++) {
+    for (var _xx = 0; _xx < _gw; _xx++) {
         if (grid[# _xx, _yy] == CELL_FLOOR) {
-            // Não spawna colado no player (raio de 4 blocos) nem na célula da saída
             if (point_distance(_xx, _yy, _player_start_x, _player_start_y) > 4 && (_xx != _exit_gx || _yy != _exit_gy)) {
-                var _b = biome_grid[# _xx, _yy];
-                array_push(_biome_cells[_b], { x: _xx, y: _yy });
+                array_push(_valid_floor_cells, { x: _xx, y: _yy, biome: biome_grid[# _xx, _yy] });
             }
         }
     }
 }
 
-var _total_enemy_types = array_length(global.enemies);
+// Embaralha as posições de chão
+_valid_floor_cells = array_shuffle(_valid_floor_cells);
 
-for (var i = 0; i < _total_enemy_types; i++) {
-    var _e = global.enemies[i];
-    if (_e == undefined) continue;
+// 2. Define a quantidade total de inimigos na dungeon (ex: 45 a 60 inimigos espalhados)
+var _total_spawns = min(irandom_range(45, 60), array_length(_valid_floor_cells));
 
-    var _max_val = _e[$ "spawwn_max"] ?? _e[$ "spawn_max"] ?? 5;
-    // Multiplica a quantidade proporcionalmente ao tamanho gigante do mapa
-    var _amount = irandom_range(_e.spawn_min * 2, _max_val * 3);
+for (var s = 0; s < _total_spawns; s++) {
+    var _cell = _valid_floor_cells[s];
+    var _cell_biome = _cell.biome;
 
-    var _valid_cells = [];
-    if (variable_struct_exists(_e, "allowed_biomes")) {
-        for (var b = 0; b < array_length(_e.allowed_biomes); b++) {
-            var _target_biome = _e.allowed_biomes[b];
-            var _cells_in_b   = _biome_cells[_target_biome];
-            for (var c = 0; c < array_length(_cells_in_b); c++) {
-                array_push(_valid_cells, _cells_in_b[c]);
+    // Filtra todos os inimigos cadastrados em global.enemies que aceitam o bioma desta célula
+    var _compatible_enemies = [];
+
+    for (var e = 0; e < array_length(global.enemies); e++) {
+        var _edata = global.enemies[e];
+        if (_edata == undefined) continue;
+
+        if (variable_struct_exists(_edata, "allowed_biomes") && is_array(_edata.allowed_biomes)) {
+            for (var b = 0; b < array_length(_edata.allowed_biomes); b++) {
+                if (_edata.allowed_biomes[b] == _cell_biome) {
+                    array_push(_compatible_enemies, e); // Armazena o índice do Enum ENEMY
+                    break;
+                }
             }
         }
     }
 
-    var _available_count = array_length(_valid_cells);
-    if (_available_count > 0) {
-        _valid_cells = array_shuffle(_valid_cells);
-        var _to_spawn = min(_amount, _available_count);
-
-        for (var s = 0; s < _to_spawn; s++) {
-            var _pos    = _valid_cells[s];
-            var _real_x = _pos.x * cell_width + (cell_width / 2);
-            var _real_y = _pos.y * cell_height + (cell_height / 2);
-
-            var _inst   = instance_create_layer(_real_x, _real_y, "Instances", Obj_Enemy, { enemy_type: i });
-            _inst.depth = -10;
-        }
+    // Sorteia um dos inimigos compatíveis com o bioma atual
+    var _chosen_type = ENEMY.SLIME;
+    if (array_length(_compatible_enemies) > 0) {
+        _compatible_enemies = array_shuffle(_compatible_enemies);
+        _chosen_type = _compatible_enemies[0];
     }
+
+    // Instancia o inimigo na posição 3D enviando o tipo sorteado
+    var _real_x = _cell.x * cell_width + (cell_width / 2);
+    var _real_y = _cell.y * cell_height + (cell_height / 2);
+
+    var _inst = instance_create_layer(_real_x, _real_y, "Instances", Obj_Enemy, { enemy_type: _chosen_type });
+    _inst.depth = -10;
 }

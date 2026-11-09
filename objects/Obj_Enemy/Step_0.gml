@@ -44,11 +44,12 @@ if (instance_exists(Obj_Player) && instance_exists(Obj_HUD)) {
             // -------------------------------------------------------------
             // ESSENCIAL: SALVA O ID DESTE INIMIGO ESPECÍFICO NA GLOBAL
             // -------------------------------------------------------------
-            global.active_enemy = id;
+            // 1. Salva este inimigo específico como a referência ativa da batalha
+			global.active_enemy = id;
 
-            // Transição de HUD e início do encontro
-            Obj_HUD.change_hud_state(HUD_STATE.COMBAT);
-            NewEncounter(enemy_data, _bg);
+			// 2. Transiciona a HUD e inicia o encontro
+			Obj_HUD.change_hud_state(HUD_STATE.COMBAT);
+			NewEncounter(enemy_data, _bg);
         }
     }
 }

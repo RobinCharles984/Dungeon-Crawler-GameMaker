@@ -22,6 +22,7 @@ function init_enemies() {
 		allowed_biomes: [BIOME.CAVE],
 		
 		// Stats
+		name: "Açude",
 		enemy_tex: sprite_get_texture(Spr_Enemy, 0),
 		life: 14,
 		attack: 7,
@@ -50,6 +51,7 @@ function init_enemies() {
 		allowed_biomes: [BIOME.CAVE],
 		
 		// Stats
+		name: "Aleijado",
 		enemy_tex: sprite_get_texture(Spr_Enemy, 0),
 		life: 7,
 		attack: 5,
@@ -78,6 +80,7 @@ function init_enemies() {
 		allowed_biomes: [BIOME.SEWER],
 		
 		// Stats
+		name: "Corpo Pútrido",
 		enemy_tex: sprite_get_texture(Spr_Enemy, 0),
 		life: 20,
 		attack: 5,
@@ -106,9 +109,10 @@ function init_enemies() {
 		allowed_biomes: [BIOME.SEWER],
 		
 		// Stats
+		name: "Desgraça Ambulante",
 		enemy_tex: sprite_get_texture(Spr_Enemy, 0),
 		life: 140,
-		attack: 2,
+		attack: 12,
 		crit_chance: 15,
 		crit_rate: 40,
 		xp: 89,
@@ -134,6 +138,7 @@ function init_enemies() {
 		allowed_biomes: [BIOME.DUNGEON],
 		
 		// Stats
+		name: "Fagulha",
 		enemy_tex: sprite_get_texture(Spr_Enemy, 0),
 		life: infinity,
 		attack: infinity,
@@ -162,6 +167,7 @@ function init_enemies() {
 		allowed_biomes: [BIOME.CAVE],
 		
 		// Stats
+		name: "Garrador",
 		enemy_tex: sprite_get_texture(Spr_Enemy, 0),
 		life: 5,
 		attack: 3,
@@ -190,6 +196,7 @@ function init_enemies() {
 		allowed_biomes: [BIOME.DUNGEON],
 		
 		// Stats
+		name: "Lambe Botas",
 		enemy_tex: sprite_get_texture(Spr_Enemy, 0),
 		life: 16,
 		attack: 8,
@@ -218,6 +225,7 @@ function init_enemies() {
 		allowed_biomes: [BIOME.DUNGEON],
 		
 		// Stats
+		name: "Menus Mantra",
 		enemy_tex: sprite_get_texture(Spr_Enemy, 0),
 		life: 8,
 		attack: 4,
@@ -246,6 +254,7 @@ function init_enemies() {
 		allowed_biomes: [BIOME.DUNGEON],
 		
 		// Stats
+		name: "O de Ontem",
 		enemy_tex: sprite_get_texture(Spr_Enemy, 0),
 		life: 0,
 		attack: 0,
@@ -274,6 +283,7 @@ function init_enemies() {
 		allowed_biomes: [BIOME.SEWER],
 		
 		// Stats
+		name: "Rato Mutante",
 		enemy_tex: sprite_get_texture(Spr_Enemy, 0),
 		life: 7,
 		attack: 5,
@@ -296,12 +306,13 @@ function init_enemies() {
 		spawwn_max: 10
     };
 	
-	// Slme
+	// Slime
 	global.enemies[ENEMY.SLIME] = {
 		// Biome
 		allowed_biomes: [BIOME.SEWER],
 		
 		// Stats
+		name: "Slime",
 		enemy_tex: sprite_get_texture(Spr_Enemy, 0),
 		life: 10,
 		attack: 3,
@@ -321,7 +332,7 @@ function init_enemies() {
 		// Spawn
 		spawn_chance: 30,
 		spawn_min: 0,
-		spawwn_max: 10
+		spawwn_max: 0
     };
 	
 	// Titio Rosa
@@ -330,6 +341,7 @@ function init_enemies() {
 		allowed_biomes: [BIOME.CAVE],
 		
 		// Stats
+		name: "Titio Rosa",
 		enemy_tex: sprite_get_texture(Spr_Enemy, 0),
 		life: 180,
 		attack: 15,

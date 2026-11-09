@@ -1,31 +1,33 @@
 /// Evento Create do Obj_Enemy
 
-if (!variable_instance_exists(id, "enemy_type")) {
+if (!variable_global_exists("enemies")) init_enemies();
+
+// Só atribui SLIME se NENHUM tipo foi enviado na criação
+if (!variable_instance_exists(id, "enemy_type") || enemy_type == undefined) {
     enemy_type = ENEMY.SLIME;
 }
 
-if (!variable_global_exists("enemies")) init_enemies();
-
+// Carrega a struct com os atributos reais do tipo sorteado
 enemy_data = global.enemies[enemy_type];
 
-// -------------------------------------------------------------
-// CORREÇÃO VISUAL: Atribui o sprite para o d3d_billboard() desenhar
-// -------------------------------------------------------------
-sprite_index = Spr_Enemy; // Atribua aqui o seu sprite do inimigo
+if (enemy_data == undefined) {
+    enemy_type = ENEMY.SLIME;
+    enemy_data = global.enemies[ENEMY.SLIME];
+}
+
+sprite_index = Spr_Enemy;
+sprite_dead  = Spr_Enemy_Dead;
 enemy_sprite = sprite_index;
 
 target_x   = x;
 target_y   = y;
 dir        = 0;
 target_dir = 0;
-depth = -10001;
+depth      = -10;
 
-// Alcance de 48px (menor que 1 bloco de 64px para não puxar de muito longe)
-agro   = 128; 
-mspeed = 0.5;
+agro    = 128;
+mspeed  = 0.5;
+is_dead = false;
 
-// --- ESTADO DE DERROTA ---
-is_dead     = false;
-sprite_dead = Spr_Enemy_Dead;
-
-show_debug_message("-> [SPAWN ENEMY] Tipo: " + string(enemy_type) + " em Pos Real X: " + string(x) + " Y: " + string(y) + " | Sprite: " + sprite_get_name(sprite_index));
+// Imprime no Output do GameMaker qual inimigo acabou de ser gerado
+show_debug_message("-> [ENEMY SPAWN] Tipo: " + string(enemy_type) + " | Nome: " + string(enemy_data.name));

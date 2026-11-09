@@ -98,12 +98,11 @@ var _draw_hud_panel = function(_state, _px, _py, _pw, _ph) {
 		    draw_text(_text_x + 6, _mp_y + 1, "MP: " + string(_p.mp) + "/" + string(_p.mp_max));
 
 		    // 3. Barra de EXP (Calcula próximo nível com base em 100 * lvl)
-		    var _xp_next = _p.level * 100;
 		    var _xp_y = _mp_y + _bar_h + 4;
-		    draw_rectangle_color(_text_x, _xp_y, _text_x + _bar_w, _xp_y + _bar_h, c_black, c_black, c_black, c_black, false);
-		    draw_rectangle_color(_text_x, _xp_y, _text_x + (_bar_w * clamp(_p.xp / _xp_next, 0, 1)), _xp_y + _bar_h, c_lime, c_lime, c_green, c_green, false);
-		    draw_rectangle_color(_text_x, _xp_y, _text_x + _bar_w, _xp_y + _bar_h, c_white, c_white, c_white, c_white, true);
-		    draw_text(_text_x + 6, _xp_y + 1, "EXP: " + string(_p.xp) + "/" + string(_xp_next));
+			draw_rectangle_color(_text_x, _xp_y, _text_x + _bar_w, _xp_y + _bar_h, c_black, c_black, c_black, c_black, false);
+			draw_rectangle_color(_text_x, _xp_y, _text_x + (_bar_w * clamp(_p.xp / _p.xp_next, 0, 1)), _xp_y + _bar_h, c_lime, c_lime, c_green, c_green, false);
+			draw_rectangle_color(_text_x, _xp_y, _text_x + _bar_w, _xp_y + _bar_h, c_white, c_white, c_white, c_white, true);
+			draw_text(_text_x + 6, _xp_y + 1, "EXP: " + string(_p.xp) + "/" + string(_p.xp_next));
 
 		    // D) Grid de Atributos de Combate (Centro/Direita do Painel)
 		    var _stat_x1 = _text_x + _bar_w + 30;
@@ -172,21 +171,9 @@ var _draw_hud_panel = function(_state, _px, _py, _pw, _ph) {
 		    // A) SE A BATALHA TERMINOU (VITÓRIA OU DERROTA)
 		    if (_b.state == BATTLE_STATE.VICTORY) {
 			    if (draw_ui_button(_act_x, _act_y + 70, _act_x + _act_w, _act_y + 115, "CONCLUIR BATALHA", c_dkgray, c_lime)) {
-        
-			        // Aplica o estado de morto na instância gravada em global.active_enemy
-			        if (variable_global_exists("active_enemy") && instance_exists(global.active_enemy)) {
-			            with (global.active_enemy) {
-			                is_dead = true;
-                
-			                // Se houver um sprite de cadáver válido, substitui o sprite_index
-			                if (variable_instance_exists(id, "sprite_dead") && sprite_exists(sprite_dead)) {
-			                    sprite_index = sprite_dead;
-			                }
-			            }
-			            // Limpa a variável global
+			        if (variable_global_exists("active_enemy")) {
 			            global.active_enemy = noone;
 			        }
-
 			        instance_destroy(_b);
 			        change_hud_state(HUD_STATE.EXPLORE);
 			    }
@@ -194,7 +181,7 @@ var _draw_hud_panel = function(_state, _px, _py, _pw, _ph) {
 		    else if (_b.state == BATTLE_STATE.DEFEAT) {
 		        if (draw_ui_button(_act_x, _act_y + 70, _act_x + _act_w, _act_y + 115, "VOLTAR AO MENU", c_maroon, c_white)) {
 		            instance_destroy(_b);
-		            room_goto(rm_main_menu); // Nome da room do seu Menu Principal
+		            room_goto(Room_MainMenu); // Nome da room do seu Menu Principal
 		        }
 		    } 
 		    // B) TURNO DO JOGADOR (BOTÕES DE AÇÃO)

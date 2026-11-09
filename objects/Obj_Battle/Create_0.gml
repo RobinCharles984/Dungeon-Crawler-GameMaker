@@ -11,29 +11,33 @@ enum BATTLE_STATE {
 state = BATTLE_STATE.PLAYER_TURN;
 
 // -------------------------------------------------------------
-// RESOLUÇÃO E TRATAMENTO SEGURO DOS DADOS DO INIMIGO
+// RESOLUÇÃO DE DADOS (Puxa direto do inimigo ativo no mapa 3D)
 // -------------------------------------------------------------
 var _data = undefined;
 
-if (variable_instance_exists(id, "enemies") && enemies != undefined) {
-    if (is_struct(enemies)) {
-        // Recebeu o struct de estatísticas diretamente
-        _data = enemies;
-    } else if (typeof(enemies) == "ref" || is_numeric(enemies)) {
-        // Recebeu o ID da instância do Obj_Enemy; extrai o struct interno dele
-        if (instance_exists(enemies) && variable_instance_exists(enemies, "enemy_data")) {
-            _data = enemies.enemy_data;
-        }
+// 1. Tenta pegar a struct diretamente da instância de inimigo que iniciou a luta
+if (variable_global_exists("active_enemy") && instance_exists(global.active_enemy)) {
+    if (variable_instance_exists(global.active_enemy, "enemy_data")) {
+        _data = global.active_enemy.enemy_data;
     }
 }
 
-// Fallback de segurança se os dados falharem
+// 2. Se não encontrou no active_enemy, pega do argumento passado no NewEncounter
+if (_data == undefined && variable_instance_exists(id, "enemies") && enemies != undefined) {
+    if (is_struct(enemies)) {
+        _data = enemies;
+    } else if (instance_exists(enemies) && variable_instance_exists(enemies, "enemy_data")) {
+        _data = enemies.enemy_data;
+    }
+}
+
+// 3. Fallback de segurança se nenhuma opção anterior existir
 if (_data == undefined) {
     if (!variable_global_exists("enemies")) init_enemies();
     _data = global.enemies[ENEMY.SLIME];
 }
 
-// Atribuição com validações seguras ($ e ??)
+// ATRIBUIÇÃO DOS STATS PARA A BATALHA
 enemy_data_ref    = _data;
 enemy_name        = _data[$ "name"] ?? "Inimigo";
 enemy_hp_max      = _data[$ "life"] ?? 10;
@@ -44,13 +48,12 @@ enemy_magic       = _data[$ "magic"] ?? 0;
 enemy_crit_chance = _data[$ "crit_chance"] ?? 5;
 enemy_crit_rate   = _data[$ "crit_rate"] ?? 50;
 enemy_xp          = _data[$ "xp"] ?? 5;
-enemy_tex         = _data[$ "enemy_tex"] ?? sprite_get_texture(Spr_Player, 0);
+enemy_tex         = _data[$ "enemy_tex"] ?? sprite_get_texture(Spr_Enemy, 0);
 
-// Modificadores de Guarda (Defesa)
 player_defending = false;
 enemy_defending  = false;
 
-// HISTÓRICO DE BATALHA (LOG)
+// LOG DA BATALHA (Exibe o nome correto)
 log_messages  = [];
 max_log_lines = 8;
 
@@ -168,13 +171,28 @@ function player_use_item(_slot_idx) {
 function check_battle_end() {
     if (enemy_hp <= 0) {
         state = BATTLE_STATE.VICTORY;
-        add_log("--- VITÓRIA! ---");
-        add_log("Você derrotou " + enemy_name + "!");
-        
-        // Sorteia Drops e XP
-        xp_gained = enemy_xp;
-        Obj_Player.stats.xp += xp_gained;
-        add_log("Ganhou " + string(xp_gained) + " de XP!");
+		
+		// TROCA IMEDIATAMENTE O SPRITE E ESTADO DO INIMIGO NO MAPA 3D
+        if (variable_global_exists("active_enemy") && instance_exists(global.active_enemy)) {
+            with (global.active_enemy) {
+                is_dead = true;
+                
+                // Aplica o sprite de cadáver assim que o HP zera
+                if (variable_instance_exists(id, "sprite_dead") && sprite_exists(Spr_Enemy_Dead)) {
+                    sprite_index = sprite_dead;
+                }
+            }
+        }
+		
+	    add_log("--- VITÓRIA! ---");
+	    add_log("Você derrotou " + enemy_name + "!");
+
+	    // Sorteia Drops e XP
+	    xp_gained = enemy_xp;
+	    add_log("Ganhou " + string(xp_gained) + " de XP!");
+
+	    // Chama a função global que recalcula a fórmula de Level Up
+	    player_gain_xp(xp_gained);
 
         if (script_exists(asset_get_index("generate_loot"))) {
             victory_loot = generate_loot(enemy_data_ref);

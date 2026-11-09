@@ -31,6 +31,8 @@ function init_classes() {
         magic: 0,
         crit_chance: 5,
         crit_rate: 40,
+		base_xp: 75,
+		hp_gain: 8, mp_gain: 5, atk_gain: 2, def_gain: 3, mag_gain: 0,
 
         // Mantra
         mantra_chance: 15,
@@ -62,6 +64,8 @@ function init_classes() {
         magic: 0,
         crit_chance: 20,
         crit_rate: 60,
+		base_xp: 50,
+		hp_gain: 3, mp_gain: 3, atk_gain: 5, def_gain: 2, mag_gain: 0,
 
         mantra_chance: 10,
         mantra_cost_mult: 1,     // o doc não cita desconto para o Lançador
@@ -91,6 +95,8 @@ function init_classes() {
         magic: 15,
         crit_chance: 15,
         crit_rate: 80,
+		base_xp: 100,
+		hp_gain: 1, mp_gain: 10, atk_gain: 0, def_gain: 0, mag_gain: 5,
 
         mantra_chance: 100,
         mantra_cost_mult: 1,     // Fogo/Gelo já custam 0 MP, então o desconto não muda nada
@@ -115,6 +121,12 @@ function create_player(_class_id, _name) {
     var _c = global.classes[_class_id];
     var _is_mantra = (random(100) < _c.mantra_chance);
     var _mult = _is_mantra ? _c.mantra_cost_mult : 1;
+	
+	var _initial_level = 1;
+    var _base_xp = _c[$ "base_xp"] ?? 100;
+	
+	// FÓRMULA: XP_next = Base * (Level ^ 1.5)
+    var _xp_next = round(_base_xp * power(_initial_level, 1.5));
 
     var _skills = [];
     for (var i = 0; i < array_length(_c.skills); i++) {
@@ -135,6 +147,11 @@ function create_player(_class_id, _name) {
         portrait: _c.player_portrait, 
         is_mantra: _is_mantra,
         level: 1,
+		
+		// SISTEMA DE EXPERIÊNCIA
+        base_xp: _base_xp,
+        xp: 0,
+        xp_next: _xp_next,
 
         life: _c.life,  life_max: _c.life,
         mp: _c.mp,      mp_max: _c.mp,
@@ -144,7 +161,50 @@ function create_player(_class_id, _name) {
         magic: _c.magic,
         crit_chance: _c.crit_chance,
         crit_rate: _c.crit_rate,
+		
+		// GANHOS DE ATRIBUTOS POR LEVEL UP
+        hp_gain:  _c[$ "hp_gain"]  ?? 5,
+        mp_gain:  _c[$ "mp_gain"]  ?? 5,
+        atk_gain: _c[$ "atk_gain"] ?? 2,
+        def_gain: _c[$ "def_gain"] ?? 1,
+        mag_gain: _c[$ "mag_gain"] ?? 1,
 
         skills: _skills
     };
+}
+
+/// @desc Adiciona XP ao jogador e processa a elevação de nível
+/// @param {Real} _amount Quantidade de experiência recebida
+function player_gain_xp(_amount) {
+    if (!instance_exists(Obj_Player)) exit;
+    var _p = Obj_Player.stats;
+
+    _p.xp += _amount;
+
+    // Loop para processar acúmulos que sobem mais de 1 nível de uma vez
+    while (_p.xp >= _p.xp_next) {
+        // Deduz a meta cumprida mantendo o excesso de XP
+        _p.xp -= _p.xp_next;
+        _p.level += 1;
+
+        // FÓRMULA: XP_next = Base * (Level ^ 1.5)
+        _p.xp_next = round(_p.base_xp * power(_p.level, 1.5));
+
+        // Incrementa os atributos da classe
+        _p.life_max += _p.hp_gain;
+        _p.life      = _p.life_max; // Restaura HP totalmente ao subir de nível
+        
+        _p.mp_max   += _p.mp_gain;
+        _p.mp        = _p.mp_max;   // Restaura MP totalmente ao subir de nível
+
+        _p.attack   += _p.atk_gain;
+        _p.defense  += _p.def_gain;
+        _p.magic    += _p.mag_gain;
+
+        // Notificação de Level Up no log da batalha (se ativo)
+        if (instance_exists(Obj_Battle)) {
+            Obj_Battle.add_log("--- LEVEL UP! ---");
+            Obj_Battle.add_log(_p.name + " subiu para o Nível " + string(_p.level) + "!");
+        }
+    }
 }
