@@ -1,3 +1,10 @@
+// Bloqueia qualquer movimentação ou rotação se não estiver no modo de exploração
+if (instance_exists(Obj_HUD)) {
+    if (Obj_HUD.hud_state != HUD_STATE.EXPLORE) {
+        exit; // Interrompe o evento Step aqui (o jogador fica imóvel)
+    }
+}
+
 move_player();
 
 // Changing fog by biome
@@ -18,3 +25,45 @@ if (instance_exists(Obj_Builder)) {
         current_fog_end   = lerp(current_fog_end, _target_data.fog_end, 0.05);
     }
 }
+
+// Se estiver em combate, apenas interpola a visão em direção ao inimigo antes de travar totalmente
+if (instance_exists(Obj_HUD)) {
+    if (Obj_HUD.hud_state == HUD_STATE.COMBAT) {
+        if (variable_instance_exists(id, "target_combat_dir")) {
+            // Gira suavemente a câmera até alinhar com a direção do inimigo
+            var _diff = angle_difference(target_combat_dir, dir);
+            dir += _diff * 0.15; 
+        }
+        exit; // Impede movimentação
+    }
+}
+
+/// Evento Step do Obj_Player
+
+// Se estiver executando o recuo de fuga, desliza até a célula de trás e trava os controles
+if (is_fleeing) {
+    // Aproxima X e Y suavemente em direção ao destino de fuga
+    if (x < flee_target_x) x = min(x + flee_speed, flee_target_x);
+    if (x > flee_target_x) x = max(x - flee_speed, flee_target_x);
+    if (y < flee_target_y) y = min(y + flee_speed, flee_target_y);
+    if (y > flee_target_y) y = max(y - flee_speed, flee_target_y);
+
+    // Sincroniza as variáveis de controle da grade do próprio Player (se houver)
+    if (variable_instance_exists(id, "target_x")) target_x = x;
+    if (variable_instance_exists(id, "target_y")) target_y = y;
+
+    // Quando o jogador atingir a coordenada exata da célula de trás, encerra o recuo
+    if (x == flee_target_x && y == flee_target_y) {
+        is_fleeing = false;
+    }
+
+    exit; // Trava o controle normal do jogador enquanto estiver deslizando
+}
+
+// Bloqueia movimentação em menus/batalha
+if (instance_exists(Obj_HUD) && Obj_HUD.hud_state != HUD_STATE.EXPLORE) {
+    exit;
+}
+
+if(keyboard_check_pressed(ord("R")))	room_restart();
+if(keyboard_check_pressed(ord("M")))	global.show_minimap = !global.show_minimap;

@@ -18,8 +18,11 @@ function init_enemies() {
 
     // Açude
     global.enemies[ENEMY.ACUDE] = {
+		// Biome
+		allowed_biomes: [BIOME.CAVE],
+		
 		// Stats
-		enemy_tex: sprite_get_texture(Spr_Player, 0),
+		enemy_tex: sprite_get_texture(Spr_Enemy, 0),
 		life: 14,
 		attack: 7,
 		crit_chance: 8,
@@ -43,8 +46,11 @@ function init_enemies() {
 	
 	// Aleijado
     global.enemies[ENEMY.ALEIJADO] = {
+		// Biome
+		allowed_biomes: [BIOME.CAVE],
+		
 		// Stats
-		enemy_tex: sprite_get_texture(Spr_Player, 0),
+		enemy_tex: sprite_get_texture(Spr_Enemy, 0),
 		life: 7,
 		attack: 5,
 		crit_chance: 5,
@@ -68,8 +74,11 @@ function init_enemies() {
 
 	// Corpo Pútrido
     global.enemies[ENEMY.BODY] = {
+		// Biome
+		allowed_biomes: [BIOME.SEWER],
+		
 		// Stats
-		enemy_tex: sprite_get_texture(Spr_Player, 0),
+		enemy_tex: sprite_get_texture(Spr_Enemy, 0),
 		life: 20,
 		attack: 5,
 		crit_chance: 8,
@@ -93,8 +102,11 @@ function init_enemies() {
 	
 	// Desgraça Ambulante
 	global.enemies[ENEMY.DESGRACA] = {
+		// Biome
+		allowed_biomes: [BIOME.SEWER],
+		
 		// Stats
-		enemy_tex: sprite_get_texture(Spr_Player, 0),
+		enemy_tex: sprite_get_texture(Spr_Enemy, 0),
 		life: 140,
 		attack: 2,
 		crit_chance: 15,
@@ -118,8 +130,11 @@ function init_enemies() {
 	
 	// Fagulha
 	global.enemies[ENEMY.FLAME] = {
+		// Biome
+		allowed_biomes: [BIOME.DUNGEON],
+		
 		// Stats
-		enemy_tex: sprite_get_texture(Spr_Player, 0),
+		enemy_tex: sprite_get_texture(Spr_Enemy, 0),
 		life: infinity,
 		attack: infinity,
 		crit_chance: infinity,
@@ -143,8 +158,11 @@ function init_enemies() {
 	
 	// Garrador
 	global.enemies[ENEMY.GARRADOR] = {
+		// Biome
+		allowed_biomes: [BIOME.CAVE],
+		
 		// Stats
-		enemy_tex: sprite_get_texture(Spr_Player, 0),
+		enemy_tex: sprite_get_texture(Spr_Enemy, 0),
 		life: 5,
 		attack: 3,
 		crit_chance: 18,
@@ -168,8 +186,11 @@ function init_enemies() {
 	
 	// Lambe Botas
 	global.enemies[ENEMY.GUARD] = {
+		// Biome
+		allowed_biomes: [BIOME.DUNGEON],
+		
 		// Stats
-		enemy_tex: sprite_get_texture(Spr_Player, 0),
+		enemy_tex: sprite_get_texture(Spr_Enemy, 0),
 		life: 16,
 		attack: 8,
 		crit_chance: 12,
@@ -193,8 +214,11 @@ function init_enemies() {
 	
 	// Menus Mantra
 	global.enemies[ENEMY.MANTRA] = {
+		// Biome
+		allowed_biomes: [BIOME.DUNGEON],
+		
 		// Stats
-		enemy_tex: sprite_get_texture(Spr_Player, 0),
+		enemy_tex: sprite_get_texture(Spr_Enemy, 0),
 		life: 8,
 		attack: 4,
 		crit_chance: 6,
@@ -218,8 +242,11 @@ function init_enemies() {
 	
 	// O de Ontem ///////////// A SER FEITO
 	global.enemies[ENEMY.ME] = {
+		// Biome
+		allowed_biomes: [BIOME.DUNGEON],
+		
 		// Stats
-		enemy_tex: sprite_get_texture(Spr_Player, 0),
+		enemy_tex: sprite_get_texture(Spr_Enemy, 0),
 		life: 0,
 		attack: 0,
 		crit_chance: 0,
@@ -243,8 +270,11 @@ function init_enemies() {
 	
 	// Rato Mutante
 	global.enemies[ENEMY.RAT] = {
+		// Biome
+		allowed_biomes: [BIOME.SEWER],
+		
 		// Stats
-		enemy_tex: sprite_get_texture(Spr_Player, 0),
+		enemy_tex: sprite_get_texture(Spr_Enemy, 0),
 		life: 7,
 		attack: 5,
 		crit_chance: 8,
@@ -268,8 +298,11 @@ function init_enemies() {
 	
 	// Slme
 	global.enemies[ENEMY.SLIME] = {
+		// Biome
+		allowed_biomes: [BIOME.SEWER],
+		
 		// Stats
-		enemy_tex: sprite_get_texture(Spr_Player, 0),
+		enemy_tex: sprite_get_texture(Spr_Enemy, 0),
 		life: 10,
 		attack: 3,
 		crit_chance: 5,
@@ -293,8 +326,11 @@ function init_enemies() {
 	
 	// Titio Rosa
 	global.enemies[ENEMY.UNCLE] = {
+		// Biome
+		allowed_biomes: [BIOME.CAVE],
+		
 		// Stats
-		enemy_tex: sprite_get_texture(Spr_Player, 0),
+		enemy_tex: sprite_get_texture(Spr_Enemy, 0),
 		life: 180,
 		attack: 15,
 		crit_chance: 0,

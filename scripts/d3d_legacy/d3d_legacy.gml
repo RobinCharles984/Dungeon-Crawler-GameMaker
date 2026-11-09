@@ -1,7 +1,7 @@
 function d3d_start() {
     gpu_set_ztestenable(true);
     gpu_set_zwriteenable(true);
-    gpu_set_cullmode(cull_noculling);
+    gpu_set_cullmode(cull_counterclockwise);
 	gpu_set_texrepeat(true);
 
     // Cria o formato 3D global necessário para o GMS2 desenhar as paredes
@@ -110,6 +110,9 @@ function d3d_billboard()
 {
 	// Todo cálculo necessário para billboard
 	if (!instance_exists(Obj_Player)) exit;
+	
+	// Trava de renderização por distância (ignora inimigos muito distantes)
+	if (point_distance(x, y, Obj_Player.x, Obj_Player.y) > 640) exit;
 
 	var _dir = point_direction(x, y, Obj_Player.x, Obj_Player.y) + 90;
 
@@ -120,4 +123,74 @@ function d3d_billboard()
 	draw_sprite_ext(sprite_index, image_index, 0, 0, image_xscale, image_yscale, image_angle, image_blend, image_alpha);
 
 	matrix_set(matrix_world, matrix_build_identity());
+}
+
+/// @desc Desenha uma caixa 3D em wireframe (Bounding Box de depuração)
+/// @param {Real} _x Posição X no mundo
+/// @param {Real} _y Posição Y no mundo
+/// @param {Real} _z Posição Z (Elevação do centro da caixa)
+/// @param {Real} _w Largura (Tamanho X)
+/// @param {Real} _h Comprimento (Tamanho Y)
+/// @param {Real} _d Altura (Tamanho Z)
+/// @param {Constant.Color} _color Cor das linhas
+function d3d_draw_wireframe_box(_x, _y, _z, _w, _h, _d, _color) {
+    // Define a matriz de transformação centrada nas coordenadas do objeto
+    var _matrix = matrix_build(_x, _y, _z, 0, 0, 0, 1, 1, 1);
+    matrix_set(matrix_world, _matrix);
+
+    // Garante que o Z-Buffer esteja ativo
+    gpu_set_zwriteenable(true);
+    gpu_set_ztestenable(true);
+
+    // Metades das dimensões para centralizar o cubo na origem (0,0,0)
+    var _hw = _w / 2;
+    var _hh = _h / 2;
+    var _hd = _d / 2;
+
+    // Inicializa o formato de vértice (Posição 3D + Cor)
+    static format = undefined;
+    if (format == undefined) {
+        vertex_format_begin();
+        vertex_format_add_position_3d();
+        vertex_format_add_color();
+        format = vertex_format_end();
+    }
+
+    var _vbuf = vertex_create_buffer();
+    vertex_begin(_vbuf, format);
+
+    // Função interna para registrar cada aresta (linha entre dois pontos)
+    var _add_line = function(_vb, _x1, _y1, _z1, _x2, _y2, _z2, _col) {
+        vertex_position_3d(_vb, _x1, _y1, _z1);
+        vertex_color(_vb, _col, 1);
+        vertex_position_3d(_vb, _x2, _y2, _z2);
+        vertex_color(_vb, _col, 1);
+    };
+
+    // 1. Base Inferior (Z = -_hd)
+    _add_line(_vbuf, -_hw, -_hh, -_hd,  _hw, -_hh, -_hd, _color);
+    _add_line(_vbuf,  _hw, -_hh, -_hd,  _hw,  _hh, -_hd, _color);
+    _add_line(_vbuf,  _hw,  _hh, -_hd, -_hw,  _hh, -_hd, _color);
+    _add_line(_vbuf, -_hw,  _hh, -_hd, -_hw, -_hh, -_hd, _color);
+
+    // 2. Base Superior (Z = +_hd)
+    _add_line(_vbuf, -_hw, -_hh,  _hd,  _hw, -_hh,  _hd, _color);
+    _add_line(_vbuf,  _hw, -_hh,  _hd,  _hw,  _hh,  _hd, _color);
+    _add_line(_vbuf,  _hw,  _hh,  _hd, -_hw,  _hh,  _hd, _color);
+    _add_line(_vbuf, -_hw,  _hh,  _hd, -_hw, -_hh,  _hd, _color);
+
+    // 3. Colunas Verticais
+    _add_line(_vbuf, -_hw, -_hh, -_hd, -_hw, -_hh,  _hd, _color);
+    _add_line(_vbuf,  _hw, -_hh, -_hd,  _hw, -_hh,  _hd, _color);
+    _add_line(_vbuf,  _hw,  _hh, -_hd,  _hw,  _hh,  _hd, _color);
+    _add_line(_vbuf, -_hw,  _hh, -_hd, -_hw,  _hh,  _hd, _color);
+
+    vertex_end(_vbuf);
+    
+    // Submete a geometria de linhas para a GPU (Sem textura)
+    vertex_submit(_vbuf, pr_linelist, -1);
+    vertex_delete_buffer(_vbuf);
+
+    // Reseta a matriz de mundo para a identidade
+    matrix_set(matrix_world, matrix_build_identity());
 }
