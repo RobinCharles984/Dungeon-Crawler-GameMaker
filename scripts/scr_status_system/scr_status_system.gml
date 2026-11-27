@@ -65,7 +65,8 @@ function status_apply(_b, _side, _status, _turns, _dmg = undefined) {
     var _s    = status_get_side(_b, _side);
     var _slot = _s.container[_status];
     var _info = status_get_info(_status);
-    var _val  = (_dmg != undefined) ? _dmg : status_default_damage(_status, _s.hp_max);
+    var _has_dmg = (_dmg != undefined && _dmg != pointer_null && _dmg > 0);
+    var _val     = _has_dmg ? _dmg : status_default_damage(_status, _s.hp_max);
 
     _slot.turns = max(_slot.turns, _turns);
     _slot.dmg   = max(_slot.dmg,   _val);
@@ -106,11 +107,7 @@ function status_trigger_on_action(_b, _side) {
     if (_side == "player") {
         battle_damage_player(_b, _dmg, false, c_aqua);
         battle_add_log(_b, _s.name + " sofreu -" + string(_dmg) + " HP por agir Congelado!");
-        if (Obj_Player.stats.life <= 0) {
-            _b.state = BATTLE_STATE.DEFEAT;
-            battle_add_log(_b, "--- VOCE FOI DERROTADO! ---");
-            return true;
-        }
+        if (Obj_Player.stats.life <= 0) { battle_trigger_defeat(_b); return true; }
     } else {
         battle_damage_enemy(_b, _dmg, false, c_aqua);
         battle_add_log(_b, _s.name + " sofreu -" + string(_dmg) + " HP por agir Congelado!");
@@ -149,7 +146,7 @@ function status_process_round_end(_b) {
 
         // Checa morte apos Incendio antes de aplicar Sangramento
         if (_side == "enemy"  && _b.enemy_hp <= 0)          { battle_check_end(_b); return true; }
-        if (_side == "player" && Obj_Player.stats.life <= 0) { _b.state = BATTLE_STATE.DEFEAT; battle_add_log(_b, "--- VOCE FOI DERROTADO! ---"); return true; }
+        if (_side == "player" && Obj_Player.stats.life <= 0) { battle_trigger_defeat(_b); return true; }
 
         // 2. SANGRAMENTO (menor dano, mais rounds)
         if (_cont[STATUS.BLEED].turns > 0) {
@@ -161,7 +158,7 @@ function status_process_round_end(_b) {
         }
 
         if (_side == "enemy"  && _b.enemy_hp <= 0)          { battle_check_end(_b); return true; }
-        if (_side == "player" && Obj_Player.stats.life <= 0) { _b.state = BATTLE_STATE.DEFEAT; battle_add_log(_b, "--- VOCE FOI DERROTADO! ---"); return true; }
+        if (_side == "player" && Obj_Player.stats.life <= 0) { battle_trigger_defeat(_b); return true; }
 
         // 3. Decrementa estados de duracao por round (CONGELADO e DESNORTEADO)
         // (STUN decrementa apenas quando o turno e realmente pulado)

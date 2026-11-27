@@ -71,6 +71,9 @@ function init_items() {
     // 7. Equipamentos Especiais (equip_special)
     global.items[$ "staff_mantra"]    = item_weapon("staff_mantra", "Cajado do Mantra", "Corta custo de MP.", RARITY.SPECIAL, 2, 14, 0, 15, "mp_cut", Spr_Player);
     global.items[$ "ring_crit"]       = item_equip("ring_crit", "Anel do Garrador", "Aumenta chance de crítico.", RARITY.RARE, EQUIP_TYPE.ACCESSORY, 0, 0, 3, Spr_Player);
+	
+	// 8. Consumíveis Especiais (cons_special)
+	global.items[$ "pot_fume"] = item_consumable("pot_fume", "Pote de Fume", "Abafa chamas impossiveis. Unica forma de derrotar o Fagulha.", RARITY.SPECIAL, 0, 0, KEY_TYPE.NONE, Spr_Player);
 
 
     // --- GRUPOS DE DROPS MAPEADOS PARA AS SUAS VARIÁVEIS DO ENEMIES.GML ---

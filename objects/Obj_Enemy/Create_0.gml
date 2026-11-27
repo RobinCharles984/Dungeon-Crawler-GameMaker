@@ -5,7 +5,7 @@ hit_flash_timer = 0;
 
 enemy_data = global.enemies[enemy_type] ?? global.enemies[ENEMY.SLIME];
 
-sprite_index = Spr_Enemy;
+sprite_index = (enemy_type == ENEMY.ME) ? yesterday_get_sprite() : Spr_Enemy;
 sprite_dead  = Spr_Enemy_Dead;
 depth        = -10;
 is_dead      = false;

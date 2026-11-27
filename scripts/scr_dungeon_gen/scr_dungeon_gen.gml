@@ -83,6 +83,7 @@ function dungeon_generate_grid(_grid_w, _grid_h, _floors_per_biome) {
 // Instancia inimigos compativeis com o bioma de cada celula (Contexto: Obj_Builder)
 function dungeon_spawn_enemies(_start_x, _start_y, _exit_x, _exit_y, _min_total, _max_total) {
     if (!variable_global_exists("enemies")) init_enemies();
+    yesterday_load(); // Carrega o morto antes de sortear inimigos
 
     var _gw = ds_grid_width(grid), _gh = ds_grid_height(grid);
     var _floors = [];
@@ -97,18 +98,24 @@ function dungeon_spawn_enemies(_start_x, _start_y, _exit_x, _exit_y, _min_total,
 
     _floors = array_shuffle(_floors);
     var _total = min(irandom_range(_min_total, _max_total), array_length(_floors));
+    var _me_spawned = false;
 
     for (var s = 0; s < _total; s++) {
         var _c = _floors[s];
         var _pool = [];
 
         for (var e = 0; e < array_length(global.enemies); e++) {
+            // O de Ontem so aparece apos alguma morte e no maximo 1 vez na run
+            if (e == ENEMY.ME && (!yesterday_has_ghost() || _me_spawned)) continue;
+
             var _ed = global.enemies[e];
             if (_ed == undefined || !variable_struct_exists(_ed, "allowed_biomes")) continue;
             if (array_contains(_ed.allowed_biomes, _c.biome)) array_push(_pool, e);
         }
 
         var _type = (array_length(_pool) > 0) ? _pool[irandom(array_length(_pool) - 1)] : ENEMY.SLIME;
+        if (_type == ENEMY.ME) _me_spawned = true;
+
         var _rx   = _c.x * cell_width + (cell_width / 2);
         var _ry   = _c.y * cell_height + (cell_height / 2);
 

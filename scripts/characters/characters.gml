@@ -6,9 +6,35 @@ enum CLASS {
     INVOCADOR
 }
 
-// Atalho para montar uma skill (mantém o init_classes legível)
-function skill(_name, _mp, _desc) {
-    return { name: _name, mp: _mp, desc: _desc };
+// Define qual atributo a skill usa para calcular o dano
+enum SKILL_STAT {
+    NONE,   // Buff, fuga ou status puro (sem dano direto)
+    ATTACK, // Escala com Attack (inclui equipamentos e buff Forjado)
+    MAGIC   // Escala com Magic (inclui equipamentos)
+}
+
+// Configura um DoT/estado para anexar em qualquer skill
+function skill_status(_status, _chance, _turns_min, _turns_max = _turns_min, _dmg = undefined) {
+    return {
+        status:    _status,
+        chance:    _chance,
+        turns_min: _turns_min,
+        turns_max: _turns_max,
+        dmg:       _dmg
+    };
+}
+
+// Construtor de skill com escalonamento de dano (Attack / Magic) e DoTs
+function skill(_name, _mp, _desc, _stat = SKILL_STAT.NONE, _mult = 0, _statuses = [], _color = c_white) {
+    return {
+        name:     _name,
+        mp:       _mp,
+        desc:     _desc,
+        stat:     _stat,
+        mult:     _mult,
+        statuses: _statuses,
+        color:    _color
+    };
 }
 
 function init_classes() {
@@ -40,13 +66,14 @@ function init_classes() {
 
         // Skills
         skills: [
-            skill("Concussão", 30, "Causa 1.50*Attack de dano, podendo deixar o inimigo Nocauteado."),
-            skill("Blindagem", 45, "Duplica a defesa do usuário por 3 rounds.")
-        ],
-        mantra_skills: [
-            skill("Escolhido", 20, "Foge da batalha, indo para um lugar aleatório das Masmorras."),
-            skill("Forjado",   25, "Attack 1.15x maior por 2 rounds.")
-        ]
+        skill("Concussão", 30, "Causa 1.50*Attack de dano, podendo deixar o inimigo Nocauteado.",
+            SKILL_STAT.ATTACK, 1.50, [skill_status(STATUS.STUN, 50, 1)]),
+        skill("Blindagem", 45, "Duplica a defesa do usuário por 3 rounds.")
+    ],
+    mantra_skills: [
+        skill("Escolhido", 20, "Foge da batalha, indo para um lugar aleatório das Masmorras."),
+        skill("Forjado",   25, "Attack 1.15x maior por 2 rounds.")
+    ]
     };
 
     // ---------------- LANÇADOR ----------------
@@ -71,13 +98,16 @@ function init_classes() {
         mantra_cost_mult: 1,     // o doc não cita desconto para o Lançador
 
         skills: [
-            skill("Perfuração", 20, "Causa 1.70*Attack de dano, com 50% de chance de causar Sangramento por 3 rounds."),
-            skill("Head Shot",  30, "Tenta um acerto certeiro (15%). Se acertar, o inimigo morre.")
-        ],
-        mantra_skills: [
-            skill("Preciso",   40, "Ataca 3x seguidas, não importa o estado."),
-            skill("Impreciso", 35, "Inimigo fica Impreciso (erra os ataques) por 1-4 rounds.")
-        ]
+        skill("Perfuração", 20, "Causa 1.70*Attack de dano, com 50% de chance de causar Sangramento por 3 rounds.",
+            SKILL_STAT.ATTACK, 1.70, [skill_status(STATUS.BLEED, 50, 3)]),
+        skill("Head Shot",  30, "Tenta um acerto certeiro (15%). Se acertar, o inimigo morre.")
+    ],
+    mantra_skills: [
+        skill("Preciso",   40, "Ataca 3x seguidas, não importa o estado.",
+            SKILL_STAT.ATTACK, 1.00),
+        skill("Impreciso", 35, "Inimigo fica Desnorteado por 1-4 rounds.",
+            SKILL_STAT.NONE, 0, [skill_status(STATUS.DISORIENTED, 100, 1, 4)])
+    ]
     };
 
     // ---------------- INVOCADOR ----------------
@@ -102,13 +132,17 @@ function init_classes() {
         mantra_cost_mult: 1,     // Fogo/Gelo já custam 0 MP, então o desconto não muda nada
 
         skills: [
-            skill("Fogo", 0, "Causa 2*Magic de dano, com 67% de chance de causar Incêndio."),
-            skill("Gelo", 0, "Causa 1.45*Magic de dano, com 80% de chance de deixar Nocauteado.")
-        ],
-        mantra_skills: [
-            skill("Sectum",     20, "Causa Sangramento no alvo por 2-5 rounds."),
-            skill("Invisibilis", 25, "Alvo fica Impreciso (erra os ataques) por 3-6 rounds.")
-        ]
+        skill("Fogo", 0, "Causa 2*Magic de dano, com 67% de chance de causar Incêndio.",
+            SKILL_STAT.MAGIC, 2.00, [skill_status(STATUS.BURN, 67, 2)], c_orange),
+        skill("Gelo", 0, "Causa 1.45*Magic de dano, com 80% de chance de deixar Congelado.",
+            SKILL_STAT.MAGIC, 1.45, [skill_status(STATUS.FROZEN, 80, 2, 3)], c_aqua)
+    ],
+    mantra_skills: [
+        skill("Sectum",      20, "Causa Sangramento no alvo por 2-5 rounds.",
+            SKILL_STAT.NONE, 0, [skill_status(STATUS.BLEED, 100, 2, 5)]),
+        skill("Invisibilis", 25, "Alvo fica Desnorteado por 3-6 rounds.",
+            SKILL_STAT.NONE, 0, [skill_status(STATUS.DISORIENTED, 100, 3, 6)])
+    ]
     };
 }
 
@@ -131,12 +165,28 @@ function create_player(_class_id, _name) {
     var _skills = [];
     for (var i = 0; i < array_length(_c.skills); i++) {
         var _s = _c.skills[i];
-        array_push(_skills, { name: _s.name, mp: ceil(_s.mp * _mult), desc: _s.desc });
+        array_push(_skills, {
+            name:     _s.name,
+            mp:       ceil(_s.mp * _mult),
+            desc:     _s.desc,
+            stat:     _s.stat,
+            mult:     _s.mult,
+            statuses: _s.statuses,
+            color:    _s.color
+        });
     }
     if (_is_mantra) {
         for (var j = 0; j < array_length(_c.mantra_skills); j++) {
             var _m = _c.mantra_skills[j];
-            array_push(_skills, { name: _m.name, mp: _m.mp, desc: _m.desc });
+            array_push(_skills, {
+                name:     _m.name,
+                mp:       _m.mp,
+                desc:     _m.desc,
+                stat:     _m.stat,
+                mult:     _m.mult,
+                statuses: _m.statuses,
+                color:    _m.color
+            });
         }
     }
 

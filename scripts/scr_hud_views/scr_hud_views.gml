@@ -326,7 +326,7 @@ function hud_draw_explore(_px, _py, _pw, _ph) {
         if (_hov) {
             hover_tooltip = {
                 title: _sk.name,
-                sub:   "Custo: " + string(_sk.mp) + " MP",
+                sub: hud_get_skill_subtitle(_sk, _p),
                 desc:  _sk.desc,
                 col:   c_yellow
             };
@@ -440,13 +440,24 @@ function hud_draw_combat(_px, _py, _pw, _ph) {
 
     // Cartao do inimigo
     var _ex = _in_x + _in_half + 12;
-    draw_text_color(_ex, _in_y, _b.enemy_name, c_yellow, c_yellow, c_yellow, c_yellow, 1);
-    ui_draw_bar(_ex, _in_y + 23, _in_half, 17, _b.enemy_hp, _b.enemy_hp_max, c_red, c_maroon, "HP " + string(_b.enemy_hp) + "/" + string(_b.enemy_hp_max));
+    draw_text_color(_ex, _in_y, _b.enemy_name, _b.is_flame ? c_orange : c_yellow, _b.is_flame ? c_orange : c_yellow, _b.is_flame ? c_orange : c_yellow, _b.is_flame ? c_orange : c_yellow, 1);
 
-    // Tags de guarda + estados (DoTs) do INIMIGO
-    var _e_tags = _b.enemy_defending ? "[GUARDA] " : "";
+    var _hp_lbl = _b.is_flame ? "HP: ??? (IMORTAL)" : ("HP " + string(_b.enemy_hp) + "/" + string(_b.enemy_hp_max));
+    ui_draw_bar(_ex, _in_y + 20, _in_half, 16, _b.enemy_hp, _b.enemy_hp_max, c_red, c_maroon, _hp_lbl);
+
+    // Mostra MP do O de Ontem
+    var _e_tag_y = _in_y + 40;
+    if (_b.is_yesterday && _b.enemy_mp_max > 0) {
+        ui_draw_bar(_ex, _in_y + 38, _in_half, 14, _b.enemy_mp, _b.enemy_mp_max, c_blue, c_navy, "MP " + string(_b.enemy_mp) + "/" + string(_b.enemy_mp_max));
+        _e_tag_y = _in_y + 54;
+    }
+
+    var _e_tags = "";
+    if (_b.enemy_defending)             _e_tags += "[GUARDA] ";
+    if (_b.enemy_buff_armor_turns > 0)  _e_tags += "[BLIND:" + string(_b.enemy_buff_armor_turns)  + "] ";
+    if (_b.enemy_buff_forged_turns > 0) _e_tags += "[FORJ:"  + string(_b.enemy_buff_forged_turns) + "] ";
     _e_tags += status_get_tags_string(_b.enemy_status);
-    if (_e_tags != "") draw_text_color(_ex, _in_y + 42, _e_tags, c_orange, c_orange, c_orange, c_orange, 1);
+    if (_e_tags != "") draw_text_color(_ex, _e_tag_y, _e_tags, c_orange, c_orange, c_orange, c_orange, 1);
 
     // Area de acoes
     var _act_top = _in_y + 60;
@@ -486,7 +497,7 @@ function hud_draw_combat(_px, _py, _pw, _ph) {
                 var _col = (_p.mp >= _sk.mp) ? c_yellow : c_gray;
 
                 if (point_in_rectangle(_mx, _my, _in_x + 8, _sby, _in_x + _skw - 8, _sby + 24)) {
-                    hover_tooltip = { title: _sk.name, sub: "Custo: " + string(_sk.mp) + " MP", desc: _sk.desc, col: c_yellow };
+                    hover_tooltip = { title: _sk.name, sub: hud_get_skill_subtitle(_sk, _p), desc: _sk.desc, col: c_yellow };
                 }
                 if (ui_draw_button(_in_x + 8, _sby, _in_x + _skw - 8, _sby + 24, _sk.name + " (" + string(_sk.mp) + " MP)", c_dkgray, _col)) {
                     battle_player_skill(_b, _sk);
@@ -676,4 +687,17 @@ function hud_draw_minimap() {
         var _xx = _ox + (Obj_Exit.x div _cw) * _sc, _xy = _oy + (Obj_Exit.y div _ch) * _sc;
         draw_rectangle_color(_xx, _xy, _xx + _sc - 1, _xy + _sc - 1, c_white, c_white, c_white, c_white, false);
     }
+}
+
+function hud_get_skill_subtitle(_sk, _p) {
+    var _sub  = "Custo: " + string(_sk.mp) + " MP";
+    var _stat = _sk[$ "stat"] ?? SKILL_STAT.NONE;
+    var _mult = _sk[$ "mult"] ?? 0;
+
+    if (_stat == SKILL_STAT.ATTACK && _mult > 0) {
+        _sub += "  |  " + string_format(_mult, 1, 2) + "x ATK (~" + string(round(_p.attack * _mult)) + ")";
+    } else if (_stat == SKILL_STAT.MAGIC && _mult > 0) {
+        _sub += "  |  " + string_format(_mult, 1, 2) + "x MAG (~" + string(round(_p.magic * _mult)) + ")";
+    }
+    return _sub;
 }
