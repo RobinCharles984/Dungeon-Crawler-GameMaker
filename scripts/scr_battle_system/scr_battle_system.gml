@@ -1,9 +1,11 @@
 enum BATTLE_STATE {
     PLAYER_TURN,
-    COMBO_WAIT,  // Intervalo entre golpes multiplos (skill Preciso)
-    WAIT_ENEMY,  // Pausa apos acao do jogador antes do inimigo agir
+    COMBO_WAIT,     // Intervalo entre golpes multiplos (Preciso)
+    WAIT_ENEMY,     // Pausa antes do turno inimigo
     ENEMY_TURN,
-    WAIT_PLAYER, // Pausa apos acao do inimigo antes de liberar botoes
+    WAIT_ROUND_END, // Pausa breve antes dos DoTs de fim de round
+    ROUND_END,      // Aplica Incendio/Sangramento e atualiza duracoes
+    WAIT_PLAYER,    // Pausa antes de devolver o turno ao jogador
     VICTORY,
     DEFEAT
 }
@@ -13,12 +15,11 @@ function NewEncounter(_enemy_data) {
     return instance_create_layer(0, 0, "Instances", Obj_Battle, { enemies: _enemy_data });
 }
 
-// Inicializa batalha, status e VFX (Contexto: Obj_Battle)
+// Inicializa batalha, estados de ambos os lados e VFX (Contexto: Obj_Battle)
 function battle_init() {
     state      = BATTLE_STATE.PLAYER_TURN;
     turn_timer = 0;
 
-    // Resolve dados do inimigo ativo
     var _data = undefined;
     if (variable_global_exists("active_enemy") && instance_exists(global.active_enemy)) {
         _data = global.active_enemy.enemy_data;
@@ -40,32 +41,27 @@ function battle_init() {
     enemy_crit_chance = is_infinity(_data[$ "crit_chance"] ?? 5)  ? 100 : (_data[$ "crit_chance"] ?? 5);
     enemy_crit_rate   = is_infinity(_data[$ "crit_rate"]   ?? 50) ? 100 : (_data[$ "crit_rate"]   ?? 50);
     enemy_xp          = _data[$ "xp"]          ?? 5;
+    enemy_status_hits = _data[$ "status_on_hit"] ?? []; // Opcional em enemies.gml
 
-    // Defesa e buffs do jogador
+    // Buffs e guarda
     player_defending  = false;
+    enemy_defending   = false;
     buff_armor_turns  = 0; // Blindagem: 2x DEF
     buff_forged_turns = 0; // Forjado: 1.15x ATK
 
-    // Defesa e debuffs do inimigo
-    enemy_defending        = false;
-    enemy_stun_turns       = 0; // Nocauteado (pula turno)
-    enemy_inaccurate_turns = 0; // Impreciso (erra ataques)
-    enemy_bleed_turns      = 0; // Sangramento (dano por turno)
-    enemy_bleed_dmg        = 0;
-    enemy_burn_turns       = 0; // Incendio (dano por turno)
-    enemy_burn_dmg         = 0;
+    // Estados (DoTs) simetricos para jogador e inimigo
+    player_status = status_create_container();
+    enemy_status  = status_create_container();
 
-    // Controle de combo (Preciso: 3 ataques seguidos)
+    // Combo da skill Preciso
     combo_hits_left = 0;
     combo_timer     = 0;
 
-    // Log e recompensas
     log_messages  = [];
     max_log_lines = 8;
     victory_loot  = [];
     xp_gained     = 0;
 
-    // Compatibilidade com player_gain_xp() em characters.gml
     add_log = function(_text) { battle_add_log(id, _text); };
 
     battle_vfx_init();
@@ -80,7 +76,6 @@ function battle_add_log(_b, _text) {
     }
 }
 
-// Helpers de atributos efetivos com buffs aplicados
 function battle_get_player_atk(_b) {
     var _atk = Obj_Player.stats.attack;
     return (_b.buff_forged_turns > 0) ? round(_atk * 1.15) : _atk;
@@ -99,7 +94,6 @@ function battle_calc_damage(_atk, _def, _crit_chance, _crit_rate, _is_defending)
     return { damage: round(_dmg), is_crit: _crit };
 }
 
-// Aplica dano ao inimigo + piscar 3D + texto flutuante
 function battle_damage_enemy(_b, _dmg, _is_crit = false, _col = undefined, _prefix = "-") {
     with (_b) {
         enemy_hp = max(0, enemy_hp - _dmg);
@@ -111,14 +105,14 @@ function battle_damage_enemy(_b, _dmg, _is_crit = false, _col = undefined, _pref
     }
 }
 
-// Aplica dano ao jogador + flash/tremor + texto flutuante
-function battle_damage_player(_b, _dmg, _is_crit = false) {
+function battle_damage_player(_b, _dmg, _is_crit = false, _col = undefined) {
     var _p = Obj_Player.stats;
     _p.life = max(0, _p.life - _dmg);
 
     battle_vfx_trigger_player_hit(_b, _is_crit);
+    var _c   = (_col != undefined) ? _col : (_is_crit ? c_orange : c_red);
     var _txt = "-" + string(_dmg) + (_is_crit ? "!" : "");
-    battle_vfx_spawn_text(_b, _txt, _is_crit ? c_orange : c_red, "player", _is_crit);
+    battle_vfx_spawn_text(_b, _txt, _c, "player", _is_crit);
 }
 
 // --- ACOES DO JOGADOR ---
@@ -126,7 +120,14 @@ function battle_damage_player(_b, _dmg, _is_crit = false) {
 function battle_player_attack(_b) {
     with (_b) {
         if (state != BATTLE_STATE.PLAYER_TURN) exit;
+        if (status_trigger_on_action(id, "player")) exit; // Dano de Congelado ao agir
         player_defending = false;
+
+        // Teste de erro global (+ bonus se Desnorteado)
+        if (status_roll_miss(id, "player", "enemy")) {
+            state = BATTLE_STATE.WAIT_ENEMY; turn_timer = 0.60;
+            exit;
+        }
 
         var _p   = Obj_Player.stats;
         var _res = battle_calc_damage(battle_get_player_atk(id), enemy_defense, _p.crit_chance, _p.crit_rate, enemy_defending);
@@ -140,6 +141,8 @@ function battle_player_attack(_b) {
 function battle_player_defend(_b) {
     with (_b) {
         if (state != BATTLE_STATE.PLAYER_TURN) exit;
+        if (status_trigger_on_action(id, "player")) exit;
+
         player_defending = true;
         battle_vfx_spawn_text(id, "DEFESA!", c_aqua, "player", false);
         battle_add_log(id, Obj_Player.stats.name + " assumiu guarda!");
@@ -157,8 +160,12 @@ function battle_player_skill(_b, _skill) {
             battle_add_log(id, "MP insuficiente para " + _skill.name + "!");
             exit;
         }
+
         _p.mp -= _skill.mp;
         player_defending = false;
+
+        // Toda acao de skill dispara dano de Congelado no jogador
+        if (status_trigger_on_action(id, "player")) exit;
 
         var _atk = battle_get_player_atk(id);
         var _mag = _p.magic;
@@ -166,21 +173,18 @@ function battle_player_skill(_b, _skill) {
         switch (_skill.name) {
             // --- AGRESSIVO ---
             case "Concussão": case "Concussao":
+                if (status_roll_miss(id, "player", "enemy")) { state = BATTLE_STATE.WAIT_ENEMY; turn_timer = 0.60; exit; }
                 var _res = battle_calc_damage(round(_atk * 1.50), enemy_defense, _p.crit_chance, _p.crit_rate, enemy_defending);
                 battle_damage_enemy(id, _res.damage, _res.is_crit);
                 battle_add_log(id, _p.name + " usou Concussao (" + string(_res.damage) + " de dano)!");
-                if (enemy_hp > 0 && random(100) < 45) {
-                    enemy_stun_turns = max(enemy_stun_turns, 1);
-                    battle_vfx_spawn_text(id, "NOCAUTEADO!", c_yellow, "enemy", false);
-                    battle_add_log(id, enemy_name + " ficou Nocauteado!");
-                }
+                if (enemy_hp > 0 && random(100) < 50) status_apply(id, "enemy", STATUS.STUN, 1);
                 battle_check_end(id);
                 break;
 
             case "Blindagem":
                 buff_armor_turns = 3;
                 battle_vfx_spawn_text(id, "DEF x2!", c_aqua, "player", false);
-                battle_add_log(id, _p.name + " ativou Blindagem (DEF dobrada por 3 turnos)!");
+                battle_add_log(id, _p.name + " ativou Blindagem (DEF dobrada por 3 rounds)!");
                 state = BATTLE_STATE.WAIT_ENEMY; turn_timer = 0.55;
                 break;
 
@@ -191,21 +195,17 @@ function battle_player_skill(_b, _skill) {
             case "Forjado":
                 buff_forged_turns = 2;
                 battle_vfx_spawn_text(id, "ATK +15%!", c_orange, "player", false);
-                battle_add_log(id, _p.name + " ativou Forjado (ATK 1.15x por 2 turnos)!");
+                battle_add_log(id, _p.name + " ativou Forjado (ATK 1.15x por 2 rounds)!");
                 state = BATTLE_STATE.WAIT_ENEMY; turn_timer = 0.55;
                 break;
 
             // --- LANCADOR ---
             case "Perfuração": case "Perfuracao":
+                if (status_roll_miss(id, "player", "enemy")) { state = BATTLE_STATE.WAIT_ENEMY; turn_timer = 0.60; exit; }
                 var _res = battle_calc_damage(round(_atk * 1.70), enemy_defense, _p.crit_chance, _p.crit_rate, enemy_defending);
                 battle_damage_enemy(id, _res.damage, _res.is_crit);
                 battle_add_log(id, _p.name + " usou Perfuracao (" + string(_res.damage) + " de dano)!");
-                if (enemy_hp > 0 && random(100) < 50) {
-                    enemy_bleed_turns = 3;
-                    enemy_bleed_dmg   = clamp(round(enemy_hp_max * 0.10), 2, 15);
-                    battle_vfx_spawn_text(id, "SANGRANDO!", c_red, "enemy", false);
-                    battle_add_log(id, enemy_name + " esta Sangrando por 3 turnos!");
-                }
+                if (enemy_hp > 0 && random(100) < 50) status_apply(id, "enemy", STATUS.BLEED, 4);
                 battle_check_end(id);
                 break;
 
@@ -223,7 +223,7 @@ function battle_player_skill(_b, _skill) {
                 break;
 
             case "Preciso":
-                // Primeiro golpe imediato + 2 golpes em fila (COMBO_WAIT)
+                // Ignora chance de erro conforme descricao ("nao importa o estado")
                 var _res = battle_calc_damage(_atk, enemy_defense, _p.crit_chance, _p.crit_rate, enemy_defending);
                 battle_damage_enemy(id, _res.damage, _res.is_crit);
                 battle_add_log(id, _p.name + " disparou Preciso [1/3] (" + string(_res.damage) + " de dano)!");
@@ -237,58 +237,45 @@ function battle_player_skill(_b, _skill) {
                 break;
 
             case "Impreciso":
-                var _dur = irandom_range(1, 4);
-                enemy_inaccurate_turns = max(enemy_inaccurate_turns, _dur);
-                battle_vfx_spawn_text(id, "IMPRECISO!", c_fuchsia, "enemy", false);
-                battle_add_log(id, enemy_name + " ficou Impreciso por " + string(_dur) + " turnos!");
+                status_apply(id, "enemy", STATUS.DISORIENTED, irandom_range(2, 4));
                 state = BATTLE_STATE.WAIT_ENEMY; turn_timer = 0.55;
                 break;
 
             // --- INVOCADOR ---
             case "Fogo":
+                if (status_roll_miss(id, "player", "enemy")) { state = BATTLE_STATE.WAIT_ENEMY; turn_timer = 0.60; exit; }
                 var _res = battle_calc_damage(round(_mag * 2.0), enemy_defense, _p.crit_chance, _p.crit_rate, enemy_defending);
                 battle_damage_enemy(id, _res.damage, _res.is_crit, c_orange);
                 battle_add_log(id, _p.name + " lancou Fogo (" + string(_res.damage) + " de dano)!");
                 if (enemy_hp > 0 && random(100) < 67) {
-                    enemy_burn_turns = 3;
-                    enemy_burn_dmg   = max(2, round(_mag * 0.35));
-                    battle_vfx_spawn_text(id, "INCENDIO!", c_orange, "enemy", false);
-                    battle_add_log(id, enemy_name + " pegou fogo!");
+                    status_apply(id, "enemy", STATUS.BURN, 2, max(4, round(_mag * 0.55)));
                 }
                 battle_check_end(id);
                 break;
 
             case "Gelo":
+                if (status_roll_miss(id, "player", "enemy")) { state = BATTLE_STATE.WAIT_ENEMY; turn_timer = 0.60; exit; }
                 var _res = battle_calc_damage(round(_mag * 1.45), enemy_defense, _p.crit_chance, _p.crit_rate, enemy_defending);
                 battle_damage_enemy(id, _res.damage, _res.is_crit, c_aqua);
                 battle_add_log(id, _p.name + " lancou Gelo (" + string(_res.damage) + " de dano)!");
                 if (enemy_hp > 0 && random(100) < 80) {
-                    enemy_stun_turns = max(enemy_stun_turns, 1);
-                    battle_vfx_spawn_text(id, "NOCAUTEADO!", c_aqua, "enemy", false);
-                    battle_add_log(id, enemy_name + " foi congelado/Nocauteado!");
+                    status_apply(id, "enemy", STATUS.FROZEN, 3, max(3, round(_mag * 0.30)));
                 }
                 battle_check_end(id);
                 break;
 
             case "Sectum":
-                var _dur = irandom_range(2, 5);
-                enemy_bleed_turns = max(enemy_bleed_turns, _dur);
-                enemy_bleed_dmg   = clamp(round(enemy_hp_max * 0.12), 3, 18);
-                battle_vfx_spawn_text(id, "SANGRANDO!", c_red, "enemy", false);
-                battle_add_log(id, "Sectum causou Sangramento por " + string(_dur) + " turnos!");
+                status_apply(id, "enemy", STATUS.BLEED, irandom_range(4, 5));
                 state = BATTLE_STATE.WAIT_ENEMY; turn_timer = 0.55;
                 break;
 
             case "Invisibilis":
-                var _dur = irandom_range(3, 6);
-                enemy_inaccurate_turns = max(enemy_inaccurate_turns, _dur);
-                battle_vfx_spawn_text(id, "INVISIVEL!", c_aqua, "player", false);
-                battle_add_log(id, enemy_name + " ficou Impreciso por " + string(_dur) + " turnos!");
+                status_apply(id, "enemy", STATUS.DISORIENTED, irandom_range(3, 5));
                 state = BATTLE_STATE.WAIT_ENEMY; turn_timer = 0.55;
                 break;
 
-            // Fallback generico
             default:
+                if (status_roll_miss(id, "player", "enemy")) { state = BATTLE_STATE.WAIT_ENEMY; turn_timer = 0.60; exit; }
                 var _res = battle_calc_damage(_mag + 5, enemy_defense, _p.crit_chance, _p.crit_rate, enemy_defending);
                 battle_damage_enemy(id, _res.damage, _res.is_crit);
                 battle_add_log(id, _p.name + " usou " + _skill.name + " (" + string(_res.damage) + " de dano)!");
@@ -302,23 +289,29 @@ function battle_player_item(_b, _slot_idx) {
     with (_b) {
         if (state != BATTLE_STATE.PLAYER_TURN || !instance_exists(Obj_HUD)) exit;
         var _item = Obj_HUD.inv_grid[_slot_idx];
-        if (_item == undefined || _item.type != ITEM_TYPE.CONSUMABLE) {
-            battle_add_log(id, "Item nao utilizavel em batalha!");
+
+        var _hp = (_item != undefined) ? (_item[$ "hp_rec"] ?? 0) : 0;
+        var _mp = (_item != undefined) ? (_item[$ "mp_rec"] ?? 0) : 0;
+
+        if (_item == undefined || _item.type != ITEM_TYPE.CONSUMABLE || (_hp <= 0 && _mp <= 0)) {
+            battle_add_log(id, "Este item nao pode ser usado em batalha!");
             exit;
         }
+
+        if (status_trigger_on_action(id, "player")) exit;
 
         var _p = Obj_Player.stats;
         player_defending = false;
 
-        if ((_item[$ "hp_rec"] ?? 0) > 0) {
-            _p.life = min(_p.life_max, _p.life + _item.hp_rec);
-            battle_vfx_spawn_text(id, "+" + string(_item.hp_rec) + " HP", c_lime, "player", false);
-            battle_add_log(id, _p.name + " recuperou " + string(_item.hp_rec) + " HP!");
+        if (_hp > 0) {
+            _p.life = min(_p.life_max, _p.life + _hp);
+            battle_vfx_spawn_text(id, "+" + string(_hp) + " HP", c_lime, "player", false);
+            battle_add_log(id, _p.name + " recuperou " + string(_hp) + " HP!");
         }
-        if ((_item[$ "mp_rec"] ?? 0) > 0) {
-            _p.mp = min(_p.mp_max, _p.mp + _item.mp_rec);
-            battle_vfx_spawn_text(id, "+" + string(_item.mp_rec) + " MP", c_aqua, "player", false);
-            battle_add_log(id, _p.name + " recuperou " + string(_item.mp_rec) + " MP!");
+        if (_mp > 0) {
+            _p.mp = min(_p.mp_max, _p.mp + _mp);
+            battle_vfx_spawn_text(id, "+" + string(_mp) + " MP", c_aqua, "player", false);
+            battle_add_log(id, _p.name + " recuperou " + string(_mp) + " MP!");
         }
 
         Obj_HUD.inv_grid[_slot_idx] = undefined;
@@ -327,7 +320,6 @@ function battle_player_item(_b, _slot_idx) {
     }
 }
 
-// Fuga segura: tenta recuar para tras; se houver parede, usa outra celula livre longe do inimigo
 function battle_player_flee(_b) {
     var _cw = Obj_Builder.cell_width, _ch = Obj_Builder.cell_height;
     var _px = Obj_Player.x div _cw,   _py = Obj_Player.y div _ch;
@@ -353,7 +345,6 @@ function battle_player_flee(_b) {
     hud_change_state(Obj_HUD, HUD_STATE.EXPLORE);
 }
 
-// Teleporte da skill Mantra "Escolhido" para celula aleatoria segura
 function battle_teleport_escape(_b) {
     var _gw = ds_grid_width(Obj_Builder.grid), _gh = ds_grid_height(Obj_Builder.grid);
     var _cw = Obj_Builder.cell_width, _ch = Obj_Builder.cell_height;
@@ -373,7 +364,20 @@ function battle_teleport_escape(_b) {
     hud_change_state(Obj_HUD, HUD_STATE.EXPLORE);
 }
 
-// --- LOOP DE TURNOS E PAUSAS (chamado no Step de Obj_Battle) ---
+// Aplica possiveis estados configurados em enemies.gml quando o inimigo acerta o golpe
+function battle_enemy_roll_statuses(_b) {
+    var _list = _b.enemy_status_hits;
+    if (!is_array(_list)) exit;
+
+    for (var i = 0; i < array_length(_list); i++) {
+        var _st = _list[i];
+        if (random(100) < _st.chance) {
+            status_apply(_b, "player", _st.status, _st.turns, _st[$ "dmg"]);
+        }
+    }
+}
+
+// --- LOOP DE TURNOS, PAUSAS E FIM DE ROUND ---
 
 function battle_step(_b) {
     var _dt = min(delta_time / 1000000, 0.05);
@@ -381,7 +385,6 @@ function battle_step(_b) {
 
     with (_b) {
         switch (state) {
-            // Golpes extras do combo "Preciso"
             case BATTLE_STATE.COMBO_WAIT:
                 combo_timer -= _dt;
                 if (combo_timer <= 0) {
@@ -393,80 +396,89 @@ function battle_step(_b) {
                     battle_add_log(id, "Preciso [" + string(_hit) + "/3] causou " + string(_res.damage) + " de dano!");
                     combo_hits_left--;
 
-                    if (enemy_hp <= 0 || combo_hits_left <= 0) {
-                        battle_check_end(id);
-                    } else {
-                        combo_timer = 0.22;
-                    }
+                    if (enemy_hp <= 0 || combo_hits_left <= 0) battle_check_end(id);
+                    else combo_timer = 0.22;
                 }
                 break;
 
-            // Pausa antes do inimigo agir
             case BATTLE_STATE.WAIT_ENEMY:
                 turn_timer -= _dt;
                 if (turn_timer <= 0) state = BATTLE_STATE.ENEMY_TURN;
                 break;
 
-            // Execucao do turno do inimigo (DoTs -> Stun -> Acao)
             case BATTLE_STATE.ENEMY_TURN:
                 if (!instance_exists(Obj_Player)) exit;
                 enemy_defending = false;
 
-                // 1. Aplica dano por turno (Sangramento e Incendio)
-                if (enemy_bleed_turns > 0) {
-                    enemy_bleed_turns--;
-                    battle_damage_enemy(id, enemy_bleed_dmg, false, c_red);
-                    battle_add_log(id, enemy_name + " sangrou (-" + string(enemy_bleed_dmg) + " HP)!");
-                    if (enemy_hp <= 0) { battle_check_end(id); exit; }
-                }
-                if (enemy_burn_turns > 0) {
-                    enemy_burn_turns--;
-                    battle_damage_enemy(id, enemy_burn_dmg, false, c_orange);
-                    battle_add_log(id, enemy_name + " queimou (-" + string(enemy_burn_dmg) + " HP)!");
-                    if (enemy_hp <= 0) { battle_check_end(id); exit; }
-                }
-
-                // 2. Verifica Nocauteado (pula acao)
-                if (enemy_stun_turns > 0) {
-                    enemy_stun_turns--;
+                // 1. Checa Nocauteado no inimigo
+                if (enemy_status[STATUS.STUN].turns > 0) {
+                    enemy_status[STATUS.STUN].turns--;
                     battle_vfx_spawn_text(id, "NOCAUTEADO!", c_yellow, "enemy", false);
                     battle_add_log(id, enemy_name + " esta Nocauteado e perdeu o turno!");
-                } else if (random(100) < 70) {
-                    // 3. Verifica Impreciso (erra o ataque)
-                    if (enemy_inaccurate_turns > 0) {
-                        enemy_inaccurate_turns--;
-                        battle_vfx_spawn_text(id, "ERROU!", c_ltgray, "player", false);
-                        battle_add_log(id, enemy_name + " esta Impreciso e errou o ataque!");
-                    } else {
-                        var _res = battle_calc_damage(enemy_attack, battle_get_player_def(id), enemy_crit_chance, enemy_crit_rate, player_defending);
-                        battle_damage_player(id, _res.damage, _res.is_crit);
-                        battle_add_log(id, enemy_name + " causou " + string(_res.damage) + " de dano!" + (_res.is_crit ? " (CRITICO!)" : ""));
-                    }
                 } else {
-                    if (enemy_inaccurate_turns > 0) enemy_inaccurate_turns--;
-                    enemy_defending = true;
-                    battle_vfx_spawn_text(id, "GUARDA!", c_ltgray, "enemy", false);
-                    battle_add_log(id, enemy_name + " esta em guarda!");
+                    // 2. Dano de Congelado antes de executar a acao
+                    if (status_trigger_on_action(id, "enemy")) exit;
+
+                    if (random(100) < 70) {
+                        // 3. Teste de erro global (+ bonus se Desnorteado)
+                        if (!status_roll_miss(id, "enemy", "player")) {
+                            var _res = battle_calc_damage(enemy_attack, battle_get_player_def(id), enemy_crit_chance, enemy_crit_rate, player_defending);
+                            battle_damage_player(id, _res.damage, _res.is_crit);
+                            battle_add_log(id, enemy_name + " causou " + string(_res.damage) + " de dano!" + (_res.is_crit ? " (CRITICO!)" : ""));
+
+                            if (Obj_Player.stats.life > 0) battle_enemy_roll_statuses(id);
+                        }
+                    } else {
+                        enemy_defending = true;
+                        battle_vfx_spawn_text(id, "GUARDA!", c_ltgray, "enemy", false);
+                        battle_add_log(id, enemy_name + " esta em guarda!");
+                    }
                 }
 
-                // 4. Checa derrota ou pausa antes de devolver o turno
                 if (Obj_Player.stats.life <= 0) {
                     state = BATTLE_STATE.DEFEAT;
                     battle_add_log(id, "--- VOCE FOI DERROTADO! ---");
+                } else if (status_has_end_round_dots(id)) {
+                    // Pausa curta para destacar os DoTs de fim de round
+                    state      = BATTLE_STATE.WAIT_ROUND_END;
+                    turn_timer = 0.45;
                 } else {
-                    state      = BATTLE_STATE.WAIT_PLAYER;
-                    turn_timer = 0.50;
+                    // Sem DoTs de fim de round: processa direto sem pausa extra
+                    state = BATTLE_STATE.ROUND_END;
                 }
                 break;
 
-            // Pausa apos turno inimigo; atualiza duracao de buffs do jogador
+            case BATTLE_STATE.WAIT_ROUND_END:
+                turn_timer -= _dt;
+                if (turn_timer <= 0) state = BATTLE_STATE.ROUND_END;
+                break;
+
+            // Fim do round: aplica Incendio e Sangramento + atualiza buffs e duracoes
+            case BATTLE_STATE.ROUND_END:
+                var _had_dots = status_has_end_round_dots(id);
+                if (status_process_round_end(id)) exit; // Terminou em vitoria/derrota
+
+                player_defending = false;
+                if (buff_armor_turns  > 0) buff_armor_turns--;
+                if (buff_forged_turns > 0) buff_forged_turns--;
+
+                state      = BATTLE_STATE.WAIT_PLAYER;
+                turn_timer = _had_dots ? 0.55 : 0.45;
+                break;
+
             case BATTLE_STATE.WAIT_PLAYER:
                 turn_timer -= _dt;
                 if (turn_timer <= 0) {
-                    player_defending = false;
-                    if (buff_armor_turns  > 0) buff_armor_turns--;
-                    if (buff_forged_turns > 0) buff_forged_turns--;
-                    state = BATTLE_STATE.PLAYER_TURN;
+                    // Se o jogador estiver Nocauteado, pula o turno dele automaticamente
+                    if (player_status[STATUS.STUN].turns > 0) {
+                        player_status[STATUS.STUN].turns--;
+                        battle_vfx_spawn_text(id, "NOCAUTEADO!", c_yellow, "player", false);
+                        battle_add_log(id, Obj_Player.stats.name + " esta Nocauteado e perdeu o turno!");
+                        state      = BATTLE_STATE.WAIT_ENEMY;
+                        turn_timer = 0.85;
+                    } else {
+                        state = BATTLE_STATE.PLAYER_TURN;
+                    }
                 }
                 break;
         }
@@ -483,7 +495,6 @@ function battle_check_end(_b) {
 
         state = BATTLE_STATE.VICTORY;
 
-        // Troca imediata do sprite 3D para cadaver
         if (variable_global_exists("active_enemy") && instance_exists(global.active_enemy)) {
             with (global.active_enemy) {
                 is_dead = true;

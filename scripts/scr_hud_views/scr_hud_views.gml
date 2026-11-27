@@ -430,10 +430,12 @@ function hud_draw_combat(_px, _py, _pw, _ph) {
     ui_draw_bar(_pbx, _in_y + 2,  _pbw, 17, _p.life, _p.life_max, c_red,  c_maroon, "HP " + string(_p.life) + "/" + string(_p.life_max));
     ui_draw_bar(_pbx, _in_y + 23, _pbw, 17, _p.mp,   _p.mp_max,   c_blue, c_navy,   "MP " + string(_p.mp)   + "/" + string(_p.mp_max));
 
+    // Tags de buffs + estados (DoTs) do JOGADOR
     var _p_tags = "";
     if (_b.player_defending)      _p_tags += "[DEF] ";
     if (_b.buff_armor_turns > 0)  _p_tags += "[BLIND:" + string(_b.buff_armor_turns)  + "] ";
     if (_b.buff_forged_turns > 0) _p_tags += "[FORJ:"  + string(_b.buff_forged_turns) + "] ";
+    _p_tags += status_get_tags_string(_b.player_status);
     if (_p_tags != "") draw_text_color(_pbx, _in_y + 42, _p_tags, c_aqua, c_aqua, c_aqua, c_aqua, 1);
 
     // Cartao do inimigo
@@ -441,12 +443,9 @@ function hud_draw_combat(_px, _py, _pw, _ph) {
     draw_text_color(_ex, _in_y, _b.enemy_name, c_yellow, c_yellow, c_yellow, c_yellow, 1);
     ui_draw_bar(_ex, _in_y + 23, _in_half, 17, _b.enemy_hp, _b.enemy_hp_max, c_red, c_maroon, "HP " + string(_b.enemy_hp) + "/" + string(_b.enemy_hp_max));
 
-    var _e_tags = "";
-    if (_b.enemy_defending)            _e_tags += "[GUARDA] ";
-    if (_b.enemy_stun_turns > 0)       _e_tags += "[NOCAUT:" + string(_b.enemy_stun_turns)       + "] ";
-    if (_b.enemy_bleed_turns > 0)      _e_tags += "[SANG:"   + string(_b.enemy_bleed_turns)      + "] ";
-    if (_b.enemy_burn_turns > 0)       _e_tags += "[FOGO:"   + string(_b.enemy_burn_turns)       + "] ";
-    if (_b.enemy_inaccurate_turns > 0) _e_tags += "[IMPR:"   + string(_b.enemy_inaccurate_turns) + "] ";
+    // Tags de guarda + estados (DoTs) do INIMIGO
+    var _e_tags = _b.enemy_defending ? "[GUARDA] " : "";
+    _e_tags += status_get_tags_string(_b.enemy_status);
     if (_e_tags != "") draw_text_color(_ex, _in_y + 42, _e_tags, c_orange, c_orange, c_orange, c_orange, 1);
 
     // Area de acoes
@@ -496,7 +495,10 @@ function hud_draw_combat(_px, _py, _pw, _ph) {
             }
         }
     } else {
-        var _wait_txt = (_b.state == BATTLE_STATE.COMBO_WAIT) ? "EXECUTANDO COMBO..." : "TURNO DE " + string_upper(_b.enemy_name) + "...";
+        var _wait_txt = "TURNO DE " + string_upper(_b.enemy_name) + "...";
+        if (_b.state == BATTLE_STATE.COMBO_WAIT)                                                _wait_txt = "EXECUTANDO COMBO...";
+        else if (_b.state == BATTLE_STATE.WAIT_ROUND_END || _b.state == BATTLE_STATE.ROUND_END) _wait_txt = "EFEITOS DO ROUND...";
+
         ui_draw_card(_in_x, _act_top + 12, _in_x + _in_w, _act_top + 52);
         draw_set_halign(fa_center); draw_set_valign(fa_middle);
         draw_text_color(_in_x + _in_w * 0.5, _act_top + 32, _wait_txt, c_yellow, c_yellow, c_yellow, c_yellow, 1);

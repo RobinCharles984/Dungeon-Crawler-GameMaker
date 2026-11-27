@@ -86,6 +86,7 @@
     {"id":{"name":"scr_inventory_system","path":"scripts/scr_inventory_system/scr_inventory_system.yy",},},
     {"id":{"name":"scr_menu_views","path":"scripts/scr_menu_views/scr_menu_views.yy",},},
     {"id":{"name":"scr_player_controller","path":"scripts/scr_player_controller/scr_player_controller.yy",},},
+    {"id":{"name":"scr_status_system","path":"scripts/scr_status_system/scr_status_system.yy",},},
     {"id":{"name":"scr_ui_helpers","path":"scripts/scr_ui_helpers/scr_ui_helpers.yy",},},
     {"id":{"name":"Spr_Battle_Background","path":"sprites/Spr_Battle_Background/Spr_Battle_Background.yy",},},
     {"id":{"name":"Spr_Cave_Ceiling","path":"sprites/Spr_Cave_Ceiling/Spr_Cave_Ceiling.yy",},},

@@ -1,27 +1,38 @@
-// Movimento em grade de 1 celula inteira (64px) com colisao na ds_grid (Contexto: Obj_Player)
+// Movimento com passo configuravel e colisao com margem (Contexto: Obj_Player)
 function player_handle_movement() {
     if (!instance_exists(Obj_Builder)) exit;
 
     var _cw = Obj_Builder.cell_width, _ch = Obj_Builder.cell_height;
     var _gw = ds_grid_width(Obj_Builder.grid), _gh = ds_grid_height(Obj_Builder.grid);
 
+    var _step_size = 32; // Tamanho do passo em px (64 = 1 bloco, 32 = meio bloco, 16 = 1/4)
+    var _margin    = 12; // Folga das paredes/quinas para evitar clipping da camera
+
     var _up    = keyboard_check_pressed(vk_up)    || keyboard_check_pressed(ord("W"));
     var _down  = keyboard_check_pressed(vk_down)  || keyboard_check_pressed(ord("S"));
     var _left  = keyboard_check_pressed(vk_left)  || keyboard_check_pressed(ord("A"));
     var _right = keyboard_check_pressed(vk_right) || keyboard_check_pressed(ord("D"));
 
-    // Mantem os sinais originais da sua projecao (zup = -1)
     if (_left)  target_dir -= 90;
     if (_right) target_dir += 90;
 
     var _move_sign = _up - _down;
     if (_move_sign != 0) {
-        var _nx = target_x + round(lengthdir_x(_cw * _move_sign, target_dir));
-        var _ny = target_y + round(lengthdir_y(_ch * _move_sign, target_dir));
-        var _gx = _nx div _cw;
-        var _gy = _ny div _ch;
+        var _nx = target_x + round(lengthdir_x(_step_size * _move_sign, target_dir));
+        var _ny = target_y + round(lengthdir_y(_step_size * _move_sign, target_dir));
 
-        if (_gx >= 0 && _gx < _gw && _gy >= 0 && _gy < _gh && Obj_Builder.grid[# _gx, _gy] == Obj_Builder.CELL_FLOOR) {
+        // Checa os 4 cantos ao redor do destino para impedir clipping em paredes e quinas
+        var _c1x = floor((_nx - _margin) / _cw), _c1y = floor((_ny - _margin) / _ch);
+        var _c2x = floor((_nx + _margin) / _cw), _c2y = floor((_ny + _margin) / _ch);
+
+        var _can_move =
+            (_c1x >= 0 && _c2x < _gw && _c1y >= 0 && _c2y < _gh) &&
+            (Obj_Builder.grid[# _c1x, _c1y] == Obj_Builder.CELL_FLOOR) &&
+            (Obj_Builder.grid[# _c2x, _c1y] == Obj_Builder.CELL_FLOOR) &&
+            (Obj_Builder.grid[# _c1x, _c2y] == Obj_Builder.CELL_FLOOR) &&
+            (Obj_Builder.grid[# _c2x, _c2y] == Obj_Builder.CELL_FLOOR);
+
+        if (_can_move) {
             target_x = _nx;
             target_y = _ny;
         }

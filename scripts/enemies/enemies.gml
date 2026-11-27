@@ -42,7 +42,10 @@ function init_enemies() {
 		// Spawn
 		spawn_chance: 30,
 		spawn_min: 0,
-		spawwn_max: 10
+		spawwn_max: 10,
+		
+		//Skills
+		status_on_hit: [{ status: STATUS.BLEED, chance: 35, turns: 4 }]
     };
 	
 	// Aleijado
@@ -71,7 +74,10 @@ function init_enemies() {
 		// Spawn
 		spawn_chance: 30,
 		spawn_min: 0,
-		spawwn_max: 10
+		spawwn_max: 10,
+		
+		//Skills
+		status_on_hit: [{ status: STATUS.BLEED, chance: 100, turns: 4 }]
     };
 
 	// Corpo Pútrido
@@ -100,7 +106,10 @@ function init_enemies() {
 		// Spawn
 		spawn_chance: 30,
 		spawn_min: 0,
-		spawwn_max: 10
+		spawwn_max: 10,
+		
+		//Skills
+		status_on_hit: [{ status: STATUS.BLEED, chance: 100, turns: 4 }]
     };
 	
 	// Desgraça Ambulante
@@ -129,7 +138,10 @@ function init_enemies() {
 		// Spawn
 		spawn_chance: 30,
 		spawn_min: 0,
-		spawwn_max: 1
+		spawwn_max: 1,
+		
+		//Skills
+		status_on_hit: [{ status: STATUS.BLEED, chance: 100, turns: 4 }]
     };
 	
 	// Fagulha
@@ -187,7 +199,10 @@ function init_enemies() {
 		// Spawn
 		spawn_chance: 30,
 		spawn_min: 0,
-		spawwn_max: 10
+		spawwn_max: 10,
+		
+		//Skills
+		status_on_hit: [{ status: STATUS.BLEED, chance: 100, turns: 4 }]
     };
 	
 	// Lambe Botas
@@ -216,7 +231,10 @@ function init_enemies() {
 		// Spawn
 		spawn_chance: 30,
 		spawn_min: 0,
-		spawwn_max: 10
+		spawwn_max: 10,
+		
+		//Skills
+		status_on_hit: [{ status: STATUS.BLEED, chance: 100, turns: 4 }]
     };
 	
 	// Menus Mantra
@@ -245,7 +263,10 @@ function init_enemies() {
 		// Spawn
 		spawn_chance: 30,
 		spawn_min: 0,
-		spawwn_max: 10
+		spawwn_max: 10,
+		
+		//Skills
+		status_on_hit: [{ status: STATUS.BLEED, chance: 100, turns: 4 }]
     };
 	
 	// O de Ontem ///////////// A SER FEITO
@@ -274,7 +295,10 @@ function init_enemies() {
 		// Spawn
 		spawn_chance: 30,
 		spawn_min: 0,
-		spawwn_max: 1
+		spawwn_max: 1,
+		
+		//Skills
+		status_on_hit: [{ status: STATUS.BLEED, chance: 100, turns: 4 }]
     };
 	
 	// Rato Mutante
@@ -303,7 +327,10 @@ function init_enemies() {
 		// Spawn
 		spawn_chance: 30,
 		spawn_min: 0,
-		spawwn_max: 10
+		spawwn_max: 10,
+		
+		//Skills
+		status_on_hit: [{ status: STATUS.BLEED, chance: 100, turns: 4 }]
     };
 	
 	// Slime
@@ -332,7 +359,10 @@ function init_enemies() {
 		// Spawn
 		spawn_chance: 30,
 		spawn_min: 0,
-		spawwn_max: 0
+		spawwn_max: 0,
+		
+		//Skills
+		status_on_hit: [{ status: STATUS.BLEED, chance: 100, turns: 4 }]
     };
 	
 	// Titio Rosa
