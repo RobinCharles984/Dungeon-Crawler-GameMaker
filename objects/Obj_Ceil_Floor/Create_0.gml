@@ -1,7 +1,9 @@
-/// initialize the ceiling and floor
-ceil_tex = sprite_get_texture(Spr_Teto, 0);
-floor_tex = sprite_get_texture(Spr_Chao, 0);
-hrep = room_width/32;
-vrep = room_height/32;
+/// Create_0.gml
+floor_vbuf = undefined;
+ceil_vbuf  = undefined;
 
-builder_ref = noone;
+if (variable_instance_exists(id, "builder_ref") && instance_exists(builder_ref)) {
+    var _m     = dungeon_build_floor_ceil_buffers(builder_ref);
+    floor_vbuf = _m.floor_vbuf;
+    ceil_vbuf  = _m.ceil_vbuf;
+}

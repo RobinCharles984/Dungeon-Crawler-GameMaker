@@ -1,9 +1,9 @@
 {
   "$GMScript":"v1",
-  "%Name":"move_player",
+  "%Name":"scr_dungeon_mesh",
   "isCompatibility":false,
   "isDnD":false,
-  "name":"move_player",
+  "name":"scr_dungeon_mesh",
   "parent":{
     "name":"Scripts",
     "path":"folders/Scripts.yy",

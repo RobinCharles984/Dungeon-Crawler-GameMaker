@@ -1,2 +1,2 @@
-/// Evento Draw de Obj_Exit
+/// Draw_0.gml
 d3d_billboard();

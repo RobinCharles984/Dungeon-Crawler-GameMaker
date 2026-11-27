@@ -169,7 +169,14 @@ function create_player(_class_id, _name) {
         def_gain: _c[$ "def_gain"] ?? 1,
         mag_gain: _c[$ "mag_gain"] ?? 1,
 
-        skills: _skills
+        skills: _skills,
+
+        // Slots de equipamento ativos
+        equipped: {
+            weapon:    undefined,
+            armor:     undefined,
+            accessory: undefined
+        }
     };
 }
 

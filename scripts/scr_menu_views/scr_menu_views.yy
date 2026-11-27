@@ -1,9 +1,9 @@
 {
   "$GMScript":"v1",
-  "%Name":"helpers",
+  "%Name":"scr_menu_views",
   "isCompatibility":false,
   "isDnD":false,
-  "name":"helpers",
+  "name":"scr_menu_views",
   "parent":{
     "name":"Scripts",
     "path":"folders/Scripts.yy",
