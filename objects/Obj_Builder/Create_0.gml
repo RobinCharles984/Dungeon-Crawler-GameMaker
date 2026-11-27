@@ -18,4 +18,4 @@ instance_create_layer(_pts.start_x * cell_width + 32, _pts.start_y * cell_height
 var _exit = instance_create_layer(_pts.exit_x * cell_width + 32, _pts.exit_y * cell_height + 32, "Instances", Obj_Exit);
 _exit.depth = -10;
 
-dungeon_spawn_enemies(_pts.start_x, _pts.start_y, _pts.exit_x, _pts.exit_y, 45, 60);
+dungeon_spawn_enemies(_pts.start_x, _pts.start_y, _pts.exit_x, _pts.exit_y);

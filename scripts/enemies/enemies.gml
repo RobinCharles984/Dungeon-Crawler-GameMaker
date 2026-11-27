@@ -42,7 +42,7 @@ function init_enemies() {
 		// Spawn
 		spawn_chance: 30,
 		spawn_min: 0,
-		spawwn_max: 10,
+		spawn_max: 10,
 		
 		//Skills
 		status_on_hit: [{ status: STATUS.BLEED, chance: 35, turns: 4 }]
@@ -74,7 +74,7 @@ function init_enemies() {
 		// Spawn
 		spawn_chance: 30,
 		spawn_min: 0,
-		spawwn_max: 10,
+		spawn_max: 10,
 		
 		//Skills
 		status_on_hit: [{ status: STATUS.BLEED, chance: 100, turns: 4 }]
@@ -106,7 +106,7 @@ function init_enemies() {
 		// Spawn
 		spawn_chance: 30,
 		spawn_min: 0,
-		spawwn_max: 10,
+		spawn_max: 10,
 		
 		//Skills
 		status_on_hit: [{ status: STATUS.BLEED, chance: 100, turns: 4 }]
@@ -138,7 +138,7 @@ function init_enemies() {
 		// Spawn
 		spawn_chance: 30,
 		spawn_min: 0,
-		spawwn_max: 1,
+		spawn_max: 1,
 		
 		//Skills
 		status_on_hit: [{ status: STATUS.BLEED, chance: 100, turns: 4 }]
@@ -170,7 +170,7 @@ function init_enemies() {
 		// Spawn
 		spawn_chance: 30,
 		spawn_min: 0,
-		spawwn_max: 10
+		spawn_max: 10
     };
 	
 	// Garrador
@@ -199,7 +199,7 @@ function init_enemies() {
 		// Spawn
 		spawn_chance: 30,
 		spawn_min: 0,
-		spawwn_max: 10,
+		spawn_max: 10,
 		
 		//Skills
 		status_on_hit: [{ status: STATUS.BLEED, chance: 100, turns: 4 }]
@@ -231,7 +231,7 @@ function init_enemies() {
 		// Spawn
 		spawn_chance: 30,
 		spawn_min: 0,
-		spawwn_max: 10,
+		spawn_max: 10,
 		
 		//Skills
 		status_on_hit: [{ status: STATUS.BLEED, chance: 100, turns: 4 }]
@@ -263,7 +263,7 @@ function init_enemies() {
 		// Spawn
 		spawn_chance: 30,
 		spawn_min: 0,
-		spawwn_max: 10,
+		spawn_max: 10,
 		
 		//Skills
 		status_on_hit: [{ status: STATUS.BLEED, chance: 100, turns: 4 }]
@@ -293,9 +293,9 @@ function init_enemies() {
 		equip_special_drop_chance: 1,
 		
 		// Spawn
-		spawn_chance: 30,
-		spawn_min: 0,
-		spawwn_max: 1,
+		spawn_chance: 100,
+		spawn_min: 10,
+		spawn_max: 15,
 		
 		//Skills
 		status_on_hit: [{ status: STATUS.BLEED, chance: 100, turns: 4 }]
@@ -327,7 +327,7 @@ function init_enemies() {
 		// Spawn
 		spawn_chance: 30,
 		spawn_min: 0,
-		spawwn_max: 10,
+		spawn_max: 10,
 		
 		//Skills
 		status_on_hit: [{ status: STATUS.BLEED, chance: 100, turns: 4 }]
@@ -359,7 +359,7 @@ function init_enemies() {
 		// Spawn
 		spawn_chance: 30,
 		spawn_min: 0,
-		spawwn_max: 0,
+		spawn_max: 10,
 		
 		//Skills
 		status_on_hit: [{ status: STATUS.BLEED, chance: 100, turns: 4 }]
@@ -391,6 +391,6 @@ function init_enemies() {
 		// Spawn
 		spawn_chance: 30,
 		spawn_min: 0,
-		spawwn_max: 1
+		spawn_max: 1
     };
 }

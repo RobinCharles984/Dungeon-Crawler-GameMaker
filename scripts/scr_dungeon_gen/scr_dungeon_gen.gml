@@ -81,45 +81,84 @@ function dungeon_generate_grid(_grid_w, _grid_h, _floors_per_biome) {
 }
 
 // Instancia inimigos compativeis com o bioma de cada celula (Contexto: Obj_Builder)
-function dungeon_spawn_enemies(_start_x, _start_y, _exit_x, _exit_y, _min_total, _max_total) {
+// Popula a masmorra obedecendo allowed_biomes, spawn_min, spawn_max e spawn_chance do enemies.gml
+function dungeon_spawn_enemies(_start_x, _start_y, _exit_x, _exit_y) {
     if (!variable_global_exists("enemies")) init_enemies();
-    yesterday_load(); // Carrega o morto antes de sortear inimigos
+    yesterday_load();
 
     var _gw = ds_grid_width(grid), _gh = ds_grid_height(grid);
-    var _floors = [];
 
+    // Separa e embaralha as celulas de chao validas por bioma
+    var _cells_by_biome = [[], [], []]; // 0: SEWER, 1: CAVE, 2: DUNGEON
     for (var _yy = 0; _yy < _gh; _yy++) {
         for (var _xx = 0; _xx < _gw; _xx++) {
-            if (grid[# _xx, _yy] == CELL_FLOOR && point_distance(_xx, _yy, _start_x, _start_y) > 4 && (_xx != _exit_x || _yy != _exit_y)) {
-                array_push(_floors, { x: _xx, y: _yy, biome: biome_grid[# _xx, _yy] });
+            if (grid[# _xx, _yy] == CELL_FLOOR &&
+                point_distance(_xx, _yy, _start_x, _start_y) > 4 &&
+                (_xx != _exit_x || _yy != _exit_y)) {
+                var _b = biome_grid[# _xx, _yy];
+                array_push(_cells_by_biome[_b], { x: _xx, y: _yy });
             }
         }
     }
+    for (var b = 0; b < 3; b++) {
+        _cells_by_biome[b] = array_shuffle(_cells_by_biome[b]);
+    }
 
-    _floors = array_shuffle(_floors);
-    var _total = min(irandom_range(_min_total, _max_total), array_length(_floors));
-    var _me_spawned = false;
+    var _total_spawned = 0;
+    show_debug_message("=== [DUNGEON SPAWN] ===");
 
-    for (var s = 0; s < _total; s++) {
-        var _c = _floors[s];
-        var _pool = [];
+    // Percorre todos os inimigos cadastrados no enemies.gml
+    for (var e = 0; e < array_length(global.enemies); e++) {
+        var _ed = global.enemies[e];
+        if (_ed == undefined || !variable_struct_exists(_ed, "allowed_biomes")) continue;
 
-        for (var e = 0; e < array_length(global.enemies); e++) {
-            // O de Ontem so aparece apos alguma morte e no maximo 1 vez na run
-            if (e == ENEMY.ME && (!yesterday_has_ghost() || _me_spawned)) continue;
-
-            var _ed = global.enemies[e];
-            if (_ed == undefined || !variable_struct_exists(_ed, "allowed_biomes")) continue;
-            if (array_contains(_ed.allowed_biomes, _c.biome)) array_push(_pool, e);
+        // O de Ontem so pode spawnar se ja existir um personagem morto salvo
+        if (e == ENEMY.ME && !yesterday_has_ghost()) {
+            show_debug_message("  " + _ed.name + ": 0 (sem personagem morto salvo)");
+            continue;
         }
 
-        var _type = (array_length(_pool) > 0) ? _pool[irandom(array_length(_pool) - 1)] : ENEMY.SLIME;
-        if (_type == ENEMY.ME) _me_spawned = true;
+        // Le spawn_max (mantem fallback para o typo antigo "spawwn_max")
+        var _max    = max(0, _ed[$ "spawn_max"] ?? _ed[$ "spawwn_max"] ?? 0);
+        var _min    = clamp(_ed[$ "spawn_min"] ?? 0, 0, _max);
+        var _chance = clamp(_ed[$ "spawn_chance"] ?? 0, 0, 100);
 
-        var _rx   = _c.x * cell_width + (cell_width / 2);
-        var _ry   = _c.y * cell_height + (cell_height / 2);
+        // Calcula quantas instancias vao nascer: minimo garantido + rolagens ate o maximo
+        var _target_count = _min;
+        for (var k = _min; k < _max; k++) {
+            if (_chance >= 100 || (_chance > 0 && random(100) < _chance)) {
+                _target_count++;
+            }
+        }
 
-        var _inst = instance_create_layer(_rx, _ry, "Instances", Obj_Enemy, { enemy_type: _type });
-        _inst.depth = -10;
+        // Instancia nas celulas livres dos biomas permitidos
+        var _spawned = 0;
+        for (var n = 0; n < _target_count; n++) {
+            // Filtra biomas permitidos que ainda tenham celulas livres
+            var _avail_biomes = [];
+            for (var i = 0; i < array_length(_ed.allowed_biomes); i++) {
+                var _bi = _ed.allowed_biomes[i];
+                if (_bi >= 0 && _bi < 3 && array_length(_cells_by_biome[_bi]) > 0) {
+                    array_push(_avail_biomes, _bi);
+                }
+            }
+            if (array_length(_avail_biomes) == 0) break;
+
+            // Retira 1 celula exclusiva da pilha ja embaralhada (evita sobreposicao)
+            var _pick_b = _avail_biomes[irandom(array_length(_avail_biomes) - 1)];
+            var _cell   = array_pop(_cells_by_biome[_pick_b]);
+
+            var _rx   = _cell.x * cell_width  + (cell_width  / 2);
+            var _ry   = _cell.y * cell_height + (cell_height / 2);
+            var _inst = instance_create_layer(_rx, _ry, "Instances", Obj_Enemy, { enemy_type: e });
+            _inst.depth = -10;
+
+            _spawned++;
+            _total_spawned++;
+        }
+
+        show_debug_message("  " + _ed.name + ": " + string(_spawned) + " (min:" + string(_min) + " max:" + string(_max) + " chance:" + string(_chance) + "%)");
     }
+
+    show_debug_message("=== TOTAL INIMIGOS: " + string(_total_spawned) + " ===");
 }
