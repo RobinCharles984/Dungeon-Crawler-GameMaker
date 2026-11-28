@@ -47,7 +47,10 @@ function dungeon_build_wall_buffers(_builder) {
         }
     }
 
-    for (var b = 0; b < 3; b++) { vertex_end(_bufs[b]); vertex_freeze(_bufs[b]); }
+    for (var b = 0; b < 3; b++) {
+        vertex_end(_bufs[b]);
+        if (vertex_get_number(_bufs[b]) > 0) vertex_freeze(_bufs[b]);
+    }
     return _bufs;
 }
 
@@ -79,8 +82,11 @@ function dungeon_build_floor_ceil_buffers(_builder) {
     }
 
     for (var b = 0; b < 3; b++) {
-        vertex_end(_floor[b]); vertex_freeze(_floor[b]);
-        vertex_end(_ceil[b]);  vertex_freeze(_ceil[b]);
+        vertex_end(_floor[b]);
+        if (vertex_get_number(_floor[b]) > 0) vertex_freeze(_floor[b]);
+
+        vertex_end(_ceil[b]);
+        if (vertex_get_number(_ceil[b]) > 0) vertex_freeze(_ceil[b]);
     }
     return { floor_vbuf: _floor, ceil_vbuf: _ceil };
 }

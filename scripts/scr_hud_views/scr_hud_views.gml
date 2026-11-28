@@ -76,6 +76,15 @@ function hud_step() {
         anim_progress = min(1, anim_progress + anim_speed);
         if (anim_progress >= 1) is_animating = false;
     }
+	
+	// Atualiza notificacoes temporarias
+    for (var i = array_length(toast_messages) - 1; i >= 0; i--) {
+        toast_messages[i].timer -= _dt;
+        if (toast_messages[i].timer <= 0) array_delete(toast_messages, i, 1);
+    }
+
+    // Verifica proximidade e interacao [E] com baus e corpos
+    prop_update_interaction();
 
     // [ESC] fecha arquivo aberto ou sai do inventario
     if (keyboard_check_pressed(vk_escape)) {
@@ -170,6 +179,8 @@ function hud_draw_gui() {
     }
 
     // Tooltip sempre por cima de todo o HUD
+	hud_draw_prop_prompt(_lay);
+    hud_draw_toasts(_lay);
     ui_draw_tooltip(hover_tooltip);
     ui_draw_brightness_overlay();
 }
@@ -679,6 +690,13 @@ function hud_draw_minimap() {
             draw_rectangle_color(_ex, _ey, _ex + _sc - 1, _ey + _sc - 1, c_red, c_red, c_red, c_red, false);
         }
     }
+	with (Obj_Prop) {
+        if (!is_opened) {
+            var _px = _ox + (x div _cw) * _sc, _py = _oy + (y div _ch) * _sc;
+            var _col = (prop_type == PROP.CHEST_SPECIAL) ? c_fuchsia : ((prop_type == PROP.CHEST_NORMAL) ? c_lime : c_ltgray);
+            draw_rectangle_color(_px, _py, _px + _sc - 1, _py + _sc - 1, _col, _col, _col, _col, false);
+        }
+    }
     if (instance_exists(Obj_Player)) {
         var _px = _ox + (Obj_Player.x div _cw) * _sc, _py = _oy + (Obj_Player.y div _ch) * _sc;
         draw_rectangle_color(_px, _py, _px + _sc - 1, _py + _sc - 1, c_yellow, c_yellow, c_yellow, c_yellow, false);
@@ -700,4 +718,65 @@ function hud_get_skill_subtitle(_sk, _p) {
         _sub += "  |  " + string_format(_mult, 1, 2) + "x MAG (~" + string(round(_p.magic * _mult)) + ")";
     }
     return _sub;
+}
+
+// Adiciona notificacao temporaria no topo da tela (ex: itens coletados ou bau trancado)
+function hud_add_toast(_text, _col = c_white) {
+    if (!instance_exists(Obj_HUD)) exit;
+    array_push(Obj_HUD.toast_messages, { text: _text, col: _col, timer: 2.8, max_time: 2.8 });
+    if (array_length(Obj_HUD.toast_messages) > 5) array_delete(Obj_HUD.toast_messages, 0, 1);
+    show_debug_message("[LOOT] " + _text);
+}
+
+// Caixa de interacao [E] quando o jogador esta perto de um Bau ou Corpo
+function hud_draw_prop_prompt(_lay) {
+    if (nearby_prop == noone || !instance_exists(nearby_prop) || hud_state != HUD_STATE.EXPLORE) exit;
+
+    var _d    = nearby_prop.prop_data;
+    var _req  = _d.required_key;
+    var _main = "[E] " + _d.action_label + " " + _d.name;
+    var _sub  = "";
+    var _scol = c_ltgray;
+
+    if (_req != KEY_TYPE.NONE) {
+        var _has = (prop_find_key_slot(id, _req) >= 0);
+        _sub  = _has ? ("Consome: " + prop_get_key_name(_req)) : ("Trancado - Requer " + prop_get_key_name(_req));
+        _scol = _has ? c_lime : c_red;
+    }
+
+    var _bw = 290;
+    var _bh = (_sub != "") ? 52 : 34;
+    var _bx = (_lay.sw - _bw) * 0.5;
+    var _by = (_lay.sh * 0.62) - (_bh * 0.5);
+
+    ui_draw_card(_bx, _by, _bx + _bw, _by + _bh);
+    draw_set_halign(fa_center);
+    draw_text_color(_bx + _bw * 0.5, _by + 8, _main, c_yellow, c_yellow, c_yellow, c_yellow, 1);
+    if (_sub != "") {
+        draw_text_color(_bx + _bw * 0.5, _by + 28, _sub, _scol, _scol, _scol, _scol, 1);
+    }
+    draw_set_halign(fa_left);
+}
+
+// Pilha de notificacoes no canto superior direito com fade out suave
+function hud_draw_toasts(_lay) {
+    var _n = array_length(toast_messages);
+    if (_n == 0) exit;
+
+    var _tw = 320, _th = 26;
+    var _tx = _lay.sw - _tw - 16;
+    var _ty = 16;
+
+    for (var i = 0; i < _n; i++) {
+        var _m = toast_messages[i];
+        var _a = clamp(_m.timer / 0.6, 0, 1); // Faz fade nos ultimos 0.6s
+        var _y = _ty + i * (_th + 6);
+
+        draw_set_alpha(0.85 * _a);
+        draw_rectangle_color(_tx, _y, _tx + _tw, _y + _th, c_black, c_black, make_color_rgb(18, 14, 12), make_color_rgb(18, 14, 12), false);
+        draw_set_alpha(_a);
+        draw_rectangle_color(_tx, _y, _tx + _tw, _y + _th, _m.col, _m.col, _m.col, _m.col, true);
+        draw_text_color(_tx + 10, _y + 5, _m.text, _m.col, _m.col, _m.col, _m.col, _a);
+    }
+    draw_set_alpha(1.0);
 }

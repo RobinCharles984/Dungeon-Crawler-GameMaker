@@ -56,7 +56,8 @@ function init_items() {
     global.items[$ "pot_mana_large"]  = item_consumable("pot_mana_large", "Poção de Mana G", "Recupera 50 MP.", RARITY.UNCOMMON, 0, 50, KEY_TYPE.NONE, Spr_Player);
 
     // 3. Chaves (key)
-    global.items[$ "key_chest"]       = item_consumable("key_chest", "Chave de Baú", "Abre baús trancados.", RARITY.UNCOMMON, 0, 0, KEY_TYPE.NORMAL_CHEST, Spr_Player);
+    global.items[$ "key_chest"]   = item_consumable("key_chest",   "Chave Normal",   "Abre baus normais trancados.",   RARITY.UNCOMMON, 0, 0, KEY_TYPE.NORMAL_CHEST,  Spr_Player);
+    global.items[$ "key_special"] = item_consumable("key_special", "Chave Especial", "Abre baus especiais trancados.", RARITY.RARE,     0, 0, KEY_TYPE.SPECIAL_CHEST, Spr_Player);
 
     // 4. Arquivos Normais (file)
     global.items[$ "file_sewer_note"] = item_file("file_sewer_note", "Bilhete Úmido", "Encontrado nos esgotos.", "Eles vêm da água quando a poça estagna...", Spr_Player);
@@ -80,7 +81,7 @@ function init_items() {
     global.item_pools = {
         potion_heal:   ["pot_heal_small", "pot_heal_large"],
         potion_mana:   ["pot_mana_small", "pot_mana_large"],
-        key:           ["key_chest"],
+        key:		   ["key_chest", "key_chest", "key_special"],
         file:          ["file_sewer_note"],
         file_special:  ["file_boss_diary"],
         equip:         ["sword_iron", "armor_leather"],

@@ -32,10 +32,16 @@ hover_tooltip     = undefined; // Tooltip desenhado por cima de tudo
 reading_file      = undefined; // Arquivo de lore aberto para leitura
 
 // Itens iniciais de teste usando items.gml
+nearby_prop    = noone;
+toast_messages = [];
+
 if (!variable_global_exists("items")) init_items();
 inv_grid[0] = global.items[$ "pot_heal_small"];
 inv_grid[1] = global.items[$ "sword_iron"];
 inv_grid[2] = global.items[$ "armor_leather"];
 inv_grid[3] = global.items[$ "ring_crit"];
+inv_grid[4] = global.items[$ "key_chest"];
+inv_grid[5] = global.items[$ "key_special"];
+inv_grid[6] = global.items[$ "pot_fume"];
 
 if (!variable_global_exists("active_enemy")) global.active_enemy = noone;
